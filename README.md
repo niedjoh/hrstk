@@ -5,7 +5,7 @@ rewrite systems (HRSs)  a la [Nipkow](https://doi.org/10.1016/S0304-3975(97)0014
 rewriting modulo beta/eta. The implementation keeps terms in beta-short eta-long normal form
 at all times.
 
-The tool functioning modes for unification of deterministic higher-order patterns (DHPs)
+The tool has modes for unification of deterministic higher-order patterns (DHPs)
 (`-m unif`), computing and checking naive joinability of 
 critical pairs (`-m cps`) of deterministic higher-order patttern rewrite systems (DPRSs),
 checking whether a conjectured equation is joinable by a given DPRS (`-m conj`)
