@@ -1,0 +1,30 @@
+; differentiation
+; source: extension of Example 3.4 in Jouannaud & Rubio ACM Trans. Com. Log. 2015
+(format higher-order)
+
+(sort real)
+
+(fun zero real)
+(fun one real)
+(fun sin (-> real real))
+(fun cos (-> real real))
+(fun ln (-> real real))
+(fun diff (-> (-> real real) real real))
+(fun plus (-> (-> real real) (-> real real) real real))
+(fun minus (-> (-> real real) real real))
+(fun times (-> (-> real real) (-> real real) real real))
+(fun div (-> (-> real real) (-> real real) real real))
+
+(rule (diff (lambda ((z real)) y) x) zero)
+(rule (diff (lambda ((z real)) z) x) one)
+(rule (diff (lambda ((z real)) (sin (F z))) x)
+      (times (lambda ((z real)) (cos (F z))) (diff F) x)
+)
+(rule (diff (lambda ((z real)) (cos (F z))) x)
+      (times (minus (lambda ((z real)) (sin (F z)))) (diff F) x)
+)
+(rule (diff (plus F G) x) (plus (diff F) (diff G) x))
+(rule (diff (times F G) x) (plus (times (diff F) G) (times F (diff G)) x))
+(rule (diff (lambda ((z real)) (ln (F z))) x)
+      (div (diff F) F x)
+)

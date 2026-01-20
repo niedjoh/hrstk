@@ -1,0 +1,16 @@
+; typed beta with protected variables
+; source: Hamana JFP 2019
+(format higher-order)
+
+(sort a)
+(sort b)
+(sort bool)
+
+(fun lam (-> (-> a b) a b))
+(fun app (-> (-> a b) a b))
+(fun var (-> a a))
+(fun isvar (-> a bool))
+(fun true bool)
+
+(rule (app (lam (lambda ((x a)) (M (var x)))) n) (M n))
+(rule (isvar (var x)) true)

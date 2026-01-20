@@ -1,0 +1,15 @@
+; round example
+; source: original
+(format higher-order)
+
+(sort int)
+(sort double)
+(sort bool)
+
+(fun round (-> double int))
+(fun fromInt (-> int double))
+(fun id (-> int int))
+(fun app (-> (-> int double) double double))
+
+(rule (app (lambda ((z int)) (F (id z) (fromInt z))) x) (F (round x) x))
+(rule (round (fromInt x)) (id x))

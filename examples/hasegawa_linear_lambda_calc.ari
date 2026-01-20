@@ -1,0 +1,16 @@
+; Hasegawas simpler linear lambda calculus (untyped variant)
+; source: Hamana JFP 2019
+(format higher-order)
+
+(sort t)
+
+(fun app (-> t t t))
+(fun lam (-> (-> t t) t))
+(fun bang (-> t t))
+(fun let (-> t (-> t t) t))
+
+(rule (app (lam M) N) (M N))
+(rule (lam (app M)) M)
+(rule (let M (lambda ((x t)) (app L (bang x)))) (app L M))
+(rule (let (bang M) N) (N M))
+(rule (let M (lambda ((x t)) (C (bang x)))) (C M))

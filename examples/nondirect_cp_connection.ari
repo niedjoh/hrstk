@@ -1,0 +1,15 @@
+; basic DPRS nondirect CP conected example
+(format higher-order)
+
+(sort a)
+
+(fun c (-> (-> a a) a))
+(fun d a)
+(fun f (-> a a a))
+(fun g (-> a a))
+(fun h (-> a a))
+
+(rule (g x) (h x))
+(rule (c (lambda ((y a)) (Z (g y)))) (Z d))
+(rule (c (lambda ((y a)) (Z (h y)))) (Z d))
+(conjecture (c (lambda ((y a)) (f (h y) (g y)))) (f d d))

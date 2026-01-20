@@ -1,0 +1,25 @@
+; surjective disjoint union
+; source: van de Pols PhD thesis, page 74
+(format higher-order)
+
+(sort a)
+(sort b)
+(sort u)
+
+(fun caseA (-> u (-> a a) (-> b a) a))
+(fun caseB (-> u (-> a b) (-> b b) b))
+(fun caseU (-> u (-> a u) (-> b u) u))
+(fun inl (-> a u))
+(fun inr (-> b u))
+
+(rule (caseA (inl x) F G) (F x))
+(rule (caseA (inr x) F G) (G x))
+(rule (caseA z (lambda ((x a)) (H (inl x))) (lambda ((y b)) (H (inr y)))) (H z))
+
+(rule (caseB (inl x) F G) (F x))
+(rule (caseB (inr x) F G) (G x))
+(rule (caseB z (lambda ((x a)) (H (inl x))) (lambda ((y b)) (H (inr y)))) (H z))
+
+(rule (caseU (inl x) F G) (F x))
+(rule (caseU (inr x) F G) (G x))
+(rule (caseU z (lambda ((x a)) (H (inl x))) (lambda ((y b)) (H (inr y)))) (H z))

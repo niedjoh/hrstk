@@ -1,0 +1,14 @@
+; untyped lamda calculus with error value bot
+; source: Mayr & Nipkow TCS 1998
+(format higher-order)
+
+(sort t)
+
+(fun abs (-> (-> t t) t))
+(fun app (-> t t t))
+(fun bot t)
+
+(rule (app (abs F) s) (F s))
+(rule (abs (app s)) s)
+(rule (app bot s) bot)
+(rule (abs (lambda ((x t)) bot)) bot)

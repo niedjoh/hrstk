@@ -1,0 +1,19 @@
+(format higher-order)
+
+(sort a)
+(sort b)
+(sort arrab)
+(sort prodab)
+(sort Va)
+
+(fun app (-> arrab a b))
+(fun lam (-> (-> Va b) arrab))
+(fun var (-> Va a))
+(fun pia (-> prodab a))
+(fun pib (-> prodab b))
+(fun pair (-> a b prodab))
+
+(rule (app (lam (lambda ((x Va)) (M (var x)))) N) (M N))
+(rule (lam (lambda ((x Va)) (app L (var x)))) L)
+(rule (pia (pair M1 N1)) M1)
+(rule (pib (pair M1 N1)) N1)

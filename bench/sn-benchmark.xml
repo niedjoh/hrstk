@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!DOCTYPE benchmark PUBLIC "+//IDN sosy-lab.org//DTD BenchExec benchmark 3.30//EN" "https://www.sosy-lab.org/benchexec/benchmark-3.30.dtd">
+<benchmark tool="hrstk"
+           displayName="hrstk-sn"
+           walltimelimit="10s">
+
+  <rundefinition name="ncpo">
+    <option name="-m">term</option>
+    <option name="-t">ncpo</option>
+    <option name="-v"></option>
+  </rundefinition>
+  
+  <rundefinition name="poly">
+    <option name="-m">term</option>
+    <option name="-t">poly</option>
+    <option name="-v"></option>
+  </rundefinition>
+
+  <tasks name="TPDB">
+    <include>~/TPDB-ARI/Higher_Order_Rewriting/*/*.ari</include>
+  </tasks>
+
+</benchmark>

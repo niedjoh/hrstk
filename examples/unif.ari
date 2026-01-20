@@ -1,0 +1,8 @@
+; classic DHP unif example
+(format higher-order)
+
+(sort a)
+
+(fun f (-> a a))
+
+(axiom (lambda ((x a) (y a)) (M (f x) (f y))) (lambda ((x a) (y a)) (f (N y x))))

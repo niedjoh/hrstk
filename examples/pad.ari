@@ -1,0 +1,24 @@
+; process algebra with data
+; source: van de Pols PhD thesis, page 75
+(format higher-order)
+
+(sort proc)
+(sort data)
+
+(fun plus (-> proc proc proc))
+(fun times (-> proc proc proc))
+(fun delta proc)
+(fun sigma (-> (-> data proc) proc))
+
+(rule (plus x x) x)
+(rule (times (plus x y) z) (plus (times x z) (times y z)))
+(rule (times (times x y) z) (times x (times y z)))
+(rule (plus x delta) x)
+(rule (times delta x) delta)
+(rule (sigma (lambda ((d0 data)) x)) x)
+(rule (plus (sigma P) (P d)) (sigma P))
+(rule (sigma (lambda ((d0 data)) (plus (P d0) (Q d0))))
+      (plus (sigma P) (sigma Q))
+)
+(rule (times (sigma P) x) (sigma (lambda ((d0 data)) (times (P d0) x))))
+

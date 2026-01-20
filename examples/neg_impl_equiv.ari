@@ -1,0 +1,15 @@
+; negation implication equiv example
+(format higher-order)
+
+(sort prop)
+
+(fun top prop)
+(fun bot prop)
+(fun neg (-> prop prop))
+(fun impl (-> prop prop prop))
+(fun equiv (-> (-> prop prop) (-> prop prop) prop))
+
+(rule (equiv (lambda ((x prop)) (F (neg x))) (lambda ((x prop)) (F (impl x bot)))) top)
+(rule (equiv (lambda ((x prop)) (F x)) (lambda ((x prop)) (F x))) top)
+(rule (neg (neg x)) x)
+(rule (impl x bot) (neg x))

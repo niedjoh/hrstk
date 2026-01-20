@@ -1,0 +1,10 @@
+; artificial example showing strengh of neutralization.
+; source: original
+(format higher-order)
+
+(sort a)
+(fun fNew (-> a a a))
+(fun g (-> a a a))
+(fun botAA (-> a a))
+
+(rule (fNew (g (botAA z) y) z) (fNew (g z y) z))

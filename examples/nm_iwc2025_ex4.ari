@@ -1,0 +1,20 @@
+; replace negation by implication example
+; source: Niederhauser & Middeldorp IWC 2025
+(format higher-order)
+
+(sort prop)
+
+(fun bot prop)
+(fun top prop)
+(fun neg (-> prop prop))
+(fun and (-> prop prop prop))
+(fun or (-> prop prop prop))
+(fun impl (-> prop prop prop))
+(fun repl (-> (-> prop prop) prop prop))
+
+(rule (repl (lambda ((y prop)) (F (neg y))) x) (F (impl x bot)))
+(rule (repl (lambda ((y prop)) (F y)) x) (F x))
+(rule (neg (neg x)) x)
+(rule (neg x) (impl x bot))
+(rule (neg (impl x bot)) x)
+(rule (impl (impl x bot) bot) x)

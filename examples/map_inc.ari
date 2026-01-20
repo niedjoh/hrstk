@@ -1,0 +1,20 @@
+; map with partially applied function
+; source: subset of AotoYamada_05_014 in TPDB (Example 8.20 in Blanqui, Jouannaud & Rubio LMCS 2015)
+(format higher-order)
+
+(sort a)
+(sort b)
+
+(fun zero b)
+(fun nil a)
+(fun inc (-> a a ))
+(fun s (-> b b))
+(fun plus (-> b b b))
+(fun map (-> (-> b b) a a ))
+(fun cons (-> b a a))
+
+(rule (plus zero x) x)
+(rule (plus (s y) x) (s (plus y x)))
+(rule (map F nil) nil)
+(rule (map F (cons u v)) (cons (F u) (map F v)))
+(rule (inc v) (map (plus (s zero)) v))

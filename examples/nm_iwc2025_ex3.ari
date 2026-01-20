@@ -1,0 +1,14 @@
+; basic DPRS critical pair example
+; source: Niederhauser & Middeldorp IWC 2025
+(format higher-order)
+
+(sort a)
+
+(fun c (-> (-> a a) a))
+(fun d a)
+(fun f (-> a a))
+(fun g (-> a a))
+(fun h (-> a a))
+
+(rule (f (g x)) (f x))
+(rule (c (lambda ((y a)) (Z (g y) (h y)))) (Z d d))

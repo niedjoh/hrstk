@@ -1,0 +1,18 @@
+; brouwer ordinals recursor
+; source: Example 7.1 in Blanqui, Jouannaud & Rubio LMCS 2015
+(format higher-order)
+
+(sort o)
+(sort n)
+(sort a)
+
+(fun lim (-> (-> n o) o))
+(fun zeroN n)
+(fun sucN (-> n n))
+(fun zero o)
+(fun suc (-> o o))
+(fun rec (-> o a (-> o a a) (-> (-> n o) (-> n a) a) a))
+
+(rule (rec zero u V W) u)
+(rule (rec (suc x) u V W) (V x (rec x u V W)))
+(rule (rec (lim Y) u V W) (W Y (lambda ((num n)) (rec (Y num) u V W))))

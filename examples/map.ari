@@ -1,0 +1,13 @@
+; map function on lists
+; source: Fuhs & Kop RTA 2012
+(format higher-order)
+
+(sort a)
+(sort b)
+
+(fun nil b)
+(fun cons (-> a b b))
+(fun map (-> (-> a a) b b))
+
+(rule (map F nil) nil)
+(rule (map F (cons h t)) (cons (F h) (map F t)))

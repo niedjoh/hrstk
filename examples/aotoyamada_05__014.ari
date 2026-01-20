@@ -1,0 +1,25 @@
+; partial applications
+; source: AotoYamada_05__014 in TPDB (Example 8.20 in Blanqui, Jouannaud & Rubio LMCS 2015)
+(format higher-order)
+
+(sort a)
+(sort b)
+
+(fun zero b)
+(fun nil a)
+(fun inc (-> a a))
+(fun double (-> a a))
+(fun s (-> b b))
+(fun plus (-> b b b))
+(fun times (-> b b b))
+(fun map (-> (-> b b) a a))
+(fun cons (-> b a a))
+
+(rule (plus zero x) x)
+(rule (plus (s y) x) (s (plus y x)))
+(rule (times zero x) zero)
+(rule (times (s y) x) (plus (times y x) x))
+(rule (map F nil) nil)
+(rule (map F (cons u v)) (cons (F u) (map F v)))
+(rule (inc v) (map (plus (s zero)) v))
+(rule (double v) (map (times (s (s zero))) v))

@@ -1,0 +1,24 @@
+; prenex normal form
+; source: van de Pols PhD thesis, page 73
+(format higher-order)
+
+(sort t)
+(sort f)
+
+(fun not (-> f f))
+(fun and (-> f f f))
+(fun or (-> f f f))
+(fun forall (-> (-> t f) f))
+(fun exists (-> (-> t f) f))
+
+(rule (and p (forall Q)) (forall (lambda ((x t)) (and p (Q x)))))
+(rule (and (forall Q) p) (forall (lambda ((x t)) (and (Q x) p))))
+(rule (or p (forall Q)) (forall (lambda ((x t)) (or p (Q x)))))
+(rule (or (forall Q) p) (forall (lambda ((x t)) (or (Q x) p))))
+(rule (and p (exists Q)) (exists (lambda ((x t)) (and p (Q x)))))
+(rule (and (exists Q) p) (exists (lambda ((x t)) (and (Q x) p))))
+(rule (or p (exists Q)) (exists (lambda ((x t)) (or p (Q x)))))
+(rule (or (exists Q) p) (exists (lambda ((x t)) (or (Q x) p))))
+(rule (not (forall Q)) (exists (lambda ((x t)) (not (Q x)))))
+(rule (not (exists Q)) (forall (lambda ((x t)) (not (Q x)))))
+

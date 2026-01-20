@@ -1,0 +1,22 @@
+(format higher-order)
+
+(sort var)
+(sort real)
+(sort realfun)
+
+(fun 0 real)
+(fun 1 real)
+(fun sin (-> real real))
+(fun cos (-> real real))
+(fun ln (-> real real))
+(fun der (-> realfun realfun))
+(fun fn (-> (-> var real) realfun))
+(fun evalv (-> realfun var real))
+(fun eval (-> realfun real real))
+(fun v (-> var real))
+
+(rule (der (fn (lambda ((x var)) (v y)))) (fn (lambda ((x var)) (0))))
+(rule (der (fn (lambda ((x var)) (v x)))) (fn (lambda ((x var)) (1))))
+(rule (evalv (fn F) y) (F y))
+(rule (der (fn (lambda ((x var)) (sin (v x))))) (fn (lambda ((x var)) (cos (v x)))))
+(rule (eval (fn (lambda ((x var)) (M (v x)))) N) (M N))

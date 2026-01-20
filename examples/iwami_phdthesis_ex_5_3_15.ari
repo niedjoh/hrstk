@@ -1,0 +1,13 @@
+(format higher-order)
+(sort nat)
+(sort list)
+
+(fun f (-> nat nat))
+(fun g (-> (-> list list) list nat))
+(fun h (-> list nat))
+(fun ^f (-> list list))
+(fun ^g (-> (-> nat nat) nat list))
+(fun ^h (-> nat list))
+
+(rule (f (g (lambda ((x list)) (X x)) Z)) (h Z))
+(rule (^f (^g (lambda ((y nat)) (Y y)) W)) (^h W))

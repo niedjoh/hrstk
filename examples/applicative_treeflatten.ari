@@ -1,0 +1,21 @@
+; applicative treeflatten
+; source: Applicative_05__TreeFlatten in TPDB (Example 8.19 in Blanqui, Jouannaud & Rubio LMCS 2015)
+(format higher-order)
+
+(sort a)
+
+(fun nil a)
+(fun flatten (-> a a))
+(fun concat (-> a a ))
+(fun cons (-> a a a))
+(fun append (-> a a a))
+(fun node (-> a a a))
+(fun map (-> (-> a a) a a))
+
+(rule (map F nil) nil)
+(rule (map F (cons x v)) (cons (F x) (map F v)))
+(rule (flatten (node x v)) (cons x (concat (map flatten v))))
+(rule (concat nil) nil)
+(rule (concat (cons x v)) (append x (concat v)))
+(rule (append nil v) v)
+(rule (append (cons x u) v) (cons x (append u v)))

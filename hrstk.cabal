@@ -1,0 +1,132 @@
+cabal-version:      3.0
+name:               hrstk
+version:            0.1.0.0
+
+synopsis: Higher-Order COmpletion tool
+
+-- A longer description of the package.
+-- description:
+
+-- A URL where users can report bugs.
+-- bug-reports:
+
+-- The license under which the package is released.
+-- license:
+
+author:             Johannes Niederhauser
+maintainer:         johannes.niederhauser@uibk.ac.at
+
+extra-source-files: CHANGELOG.md
+
+executable hrstk
+  main-is:          Main.hs
+  build-depends:
+       base >= 4.18
+     , hrstk-lib
+     , fmt
+     , mtl
+     , optparse-applicative
+     , prettyprinter
+     , text
+     , time
+     , transformers ^>= 0.6.1.2
+  hs-source-dirs:   app
+  default-language: Haskell2010
+  
+library hrstk-lib
+  exposed-modules:
+      Utils
+    , Utils.Misc
+    , Utils.FreshMonad
+    , Utils.Pretty
+    , Utils.ITerm
+    , Utils.Parse
+    , Utils.TypeInference
+    , Utils.InputProcessing
+    , Utils.SMT
+    , Utils.Type
+    , Typ
+    , Typ.Type
+    , Typ.Ops
+    , Term
+    , Term.Type
+    , Term.Ops
+    , Subst
+    , Subst.Type
+    , Subst.Ops
+    , Subst.Match
+    , Subst.Unif
+    , Equation
+    , Equation.Type
+    , Equation.Ops
+    , Equation.Rewriting
+    , Equation.CriticalPairs
+    , Termination.NCPO
+    , Termination.NCPO.Type
+    , Termination.NCPO.Ordering
+    , Termination.NCPO.Solver
+    , Termination.Poly
+    , Termination.Poly.Type
+    , Termination.Poly.Interpretation
+    , Termination.Poly.Solver
+    , TPTP
+    , TPTP.Parse
+    , ARI
+    , ARI.Parse
+  build-depends:
+      base >= 4.19
+    , containers
+    , data-default
+    , extra
+    , fmt
+    , hasmtlib ^>= 2.8.1
+    , megaparsec
+    , mtl
+    , multiset
+    , prettyprinter
+    , smtlib-backends-process
+    , text
+    , transformers ^>= 0.6.1.2
+    , vector
+  hs-source-dirs: src
+  default-language: Haskell2010
+  ghc-options: -Wall
+
+test-suite hrstk-test
+  type: exitcode-stdio-1.0
+  main-is: Test.hs
+  other-modules:
+      TypOpsSpec
+    , TermOpsSpec
+    , SubstOpsSpec
+    , MatchSpec
+    , UnifSpec
+    , EquationOpsSpec
+    , RewritingSpec
+    , CriticalPairsSpec
+    , NCPOSpec
+    , Gen
+    , Properties
+    , Predefined.Sort
+    , Predefined.Typ
+    , Predefined.DB
+    , Predefined.Var
+    , Predefined.Fun
+  hs-source-dirs: tests
+  build-depends:
+      base >= 4.18
+    , containers
+    , extra
+    , hedgehog
+    , hspec
+    , mtl
+    , prettyprinter
+    , tasty
+    , tasty-hedgehog
+    , tasty-hspec
+    , text
+    , transformers ^>= 0.6.1.2
+    , hasmtlib ^>= 2.8.1
+    , hrstk-lib
+  default-language: Haskell2010
+  ghc-options: -main-is Test -Wall
