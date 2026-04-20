@@ -116,11 +116,11 @@ spec_possibleSteps =
     it "computes a higher-order example correctly" $
      possibleSteps es t2 `shouldBe` [ t2', t2'' ]
     
-spec_rewriteToNF :: Spec
-spec_rewriteToNF =
-  describe "rewriteToNF" $ do
+spec_rewriteToNFs :: Spec
+spec_rewriteToNFs =
+  describe "rewriteToNFs" $ do
     it "computes an example correctly" $
-      rewriteToNF es t2 `shouldBe` t2'nf
+      rewriteToNFs es t2 `shouldBe` [t2'nf,t2'']
 
 spec_joinable :: Spec
 spec_joinable =
@@ -138,5 +138,5 @@ rewritingSpecs = describe "Equation.Rewriting" $ do
   spec_rootReducibleSubterms
   spec_rootRewriteStep
   spec_possibleSteps
-  spec_rewriteToNF
+  spec_rewriteToNFs
   spec_joinable
