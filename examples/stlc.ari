@@ -1,0 +1,12 @@
+; untyped lamda calculus
+; source: Mayr & Nipkow TCS 1998
+(format higher-order)
+
+(sort a)
+(sort aa)
+
+(fun abs (-> (-> a a) aa))
+(fun app (-> aa a a))
+
+(rule (app (abs F) s) (F s))
+(rule (abs (app s)) s)

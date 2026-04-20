@@ -3,9 +3,10 @@
 -- |implementation of rewriting with DPRSs
 module Equation.Rewriting where
 
+import Data.List (intersect)
 import Data.List.NonEmpty (NonEmpty,(<|),singleton)
 import qualified Data.List.NonEmpty as NEL
-import Prettyprinter (Doc,vsep,pretty,line,align,(<+>))
+import Prettyprinter (Doc,vsep,hcat,pretty,line,align,(<+>))
 
 import Utils.Pretty (prettySequence)
 import Term.Type (Term(..),Subterm)
@@ -35,39 +36,34 @@ possibleSteps es s =
   , typ (lhs e) == typ t
   , Just t' <- [rootRewriteStep e t] ]
 
--- |Rewrites a given term to normal form with respect
--- to the given ES with an outermost strategy.
-rewriteToNF :: ES -> Term -> Term
-rewriteToNF es s = case possibleSteps es s of
-  s':_ -> rewriteToNF es s'
-  [] -> s
+-- |Rewrites a given term to its normal forms with respect
+-- to the given ES
+rewriteToNFs :: ES -> Term -> [Term]
+rewriteToNFs es s = case possibleSteps es s of
+  [] -> [s]
+  ts -> [u | t <- ts, u <- rewriteToNFs es t]
 
 -- |Records the rewrite sequence to normal form starting from the
 -- given term with respect to the given ES with an outermost strategy.
-rewriteSequenceToNF :: ES -> Term -> NonEmpty Term
-rewriteSequenceToNF es s = case possibleSteps es s of
-  s':_ -> s <| rewriteSequenceToNF es s'
-  [] -> singleton s
+rewriteSequencesToNF :: ES -> Term -> [NonEmpty Term]
+rewriteSequencesToNF es s = case possibleSteps es s of
+  [] -> [singleton s]
+  ts -> [s <| us | t <- ts, us <- rewriteSequencesToNF es t]
 
 -- | Determines whether an equation is joinable. In our setting,
 -- this simply means that both sides rewrite to the same normal form
 -- (under some strategy which is fixed in rewriteToNF).
 joinable :: ES -> Equation -> Bool
-joinable es e = rewriteToNF es (lhs e) == rewriteToNF es (rhs e)
-
--- |Computes the joining sequence of an equation with respect to a given ES
--- by reducing both sides to normal form.
-joiningSequence :: ES -> Equation -> (NonEmpty Term, NonEmpty Term)
-joiningSequence es e = (rewriteSequenceToNF es (lhs e), rewriteSequenceToNF es (rhs e))
+joinable es e = not . null $ intersect (rewriteToNFs es (lhs e)) (rewriteToNFs es (rhs e))
 
 -- |Prettyprinter of joinability of conjectures given axioms
 joinabilityDoc :: ES -> ES -> Doc a
 joinabilityDoc es1 es2 = (vsep . map jd $ zip es2 [1 :: Int ..]) <> line <> line where
   jd (e,i) = let
-    (ls,rs) = joiningSequence es1 e
-    lNF = NEL.last ls
-    rNF = NEL.last rs
-    in line <> "#" <> pretty i <+> align (pretty e <> line <> line <>
-          if lNF == rNF
-          then "joinable" <> prettySequence ls <> prettySequence rs
-          else "not joinable" <> prettySequence ls <> prettySequence rs)
+    (lseqs,rseqs) = (rewriteSequencesToNF es1 (lhs e), rewriteSequencesToNF es1 (rhs e))
+    in line <> "#" <> pretty i <+>
+       align (pretty e <> line <> line <>
+             case [(ls,rs) | ls <- lseqs, rs <- rseqs, NEL.last ls == NEL.last rs] of
+               (lseq,rseq):_ -> "joinable" <> prettySequence lseq <> prettySequence rseq
+               [] -> "not joinable" <> hcat (map prettySequence lseqs) <> hcat (map prettySequence rseqs)
+             )

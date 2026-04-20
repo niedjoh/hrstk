@@ -1,0 +1,10 @@
+; shows power of NCPO's FV-case
+; source: original
+(format higher-order)
+
+(sort a)
+
+(fun c a)
+(fun g (-> (-> a a) a))
+
+(rule (g F) (F c))

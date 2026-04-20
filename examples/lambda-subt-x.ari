@@ -1,0 +1,8 @@
+(format higher-order)
+
+(sort a)
+
+(fun abs (-> (-> a a) a))
+(fun plus (-> a a a))
+
+(rule (plus (abs F) (abs G)) (abs (lambda ((x a)) (plus (F x) (G x)))))

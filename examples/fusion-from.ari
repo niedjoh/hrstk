@@ -1,0 +1,28 @@
+; basic fusion transformation rule
+; source: original DHP paper, adapted to DPRS
+(format higher-order)
+
+(sort a)
+(sort la)
+
+(fun s (-> a a))
+(fun plus (-> a a a))
+(fun mult (-> a a a))
+(fun 0 a)
+(fun nil la)
+(fun cons (-> a la la))
+(fun sum (-> la a))
+(fun foldr1 (-> (-> a la la) la la la))
+(fun foldr2 (-> (-> a a a) a la a))
+(fun comp (-> (-> la a) (-> la la) la a))
+(fun check (-> (-> a la a) la la a))
+(fun from (-> a la))
+
+(rule (sum nil) 0)
+(rule (sum (cons x xs)) (plus x (sum xs)))
+(rule (comp sum (foldr1 G e)) (check (lambda ((x a) (y la)) (sum (G x y))) e))
+(rule (check (lambda ((x a) (y la)) (F x (sum y))) e) (foldr2 F (sum e)))
+(rule (from x) (cons x (from (s x))))
+(conjecture (comp sum (foldr1 (lambda ((x a) (y la)) (cons (mult x x) y)) nil))
+            (foldr2 (lambda ((x a) (y a)) (plus (mult x x) y)) (sum nil))
+)
