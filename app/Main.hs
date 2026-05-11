@@ -35,12 +35,13 @@ import Prettyprinter.Render.Text (putDoc)
 import System.Exit (exitSuccess,exitFailure)
 
 import Utils.Parse (ProblemParser,parseProblem,scARI,scTPTP)
-import Utils.Pretty (prettyNList)
+import Utils.Pretty (prettyNList,docToString)
 import Utils.SMT (SMTSolver,z3,cvc5,yices)
 import Utils.InputProcessing (InputType(..),processInput)
 import Typ.Type (Sort)
 import Term.Type (FunTypMap)
 import Equation.Type (Equation(..),ES)
+import Equation.Ops (rule, dhpRule, patternRule, leftLinear, secondOrderEq)
 import qualified Subst.Unif as Unif
 import qualified Equation.Rewriting as RW
 import qualified Equation.CriticalPairs as CP
@@ -55,24 +56,33 @@ instance Show InputFormat where
   show ARI = "ari"
   show TPTP = "tptp"
 
-data Mode = Termination | Unification | CPJoinability | ConjectureJoinability
+data Mode = Info | Termination | Confluence | Unification | CPJoinability | ConjectureJoinability
 
 instance Show Mode where
   show Termination = "term"
+  show Confluence = "conf"
   show Unification = "unif"
   show CPJoinability = "cps"
   show ConjectureJoinability = "conj"
 
-data TermMethod = NCPO | Poly
+data TermMethod = TAll | NCPO | Poly
 
 instance Show TermMethod where
   show NCPO = "ncpo"
   show Poly = "poly"
 
+data ConfMethod = CAll | OR | CP | DC
+
+instance Show ConfMethod where
+  show OR = "orthogonality"
+  show CP = "terminating + joinable CPs"
+  show DC = "development closedness"
+
 data Args = Args
   { inputFile :: String
   , mode :: Mode
   , termMethod :: TermMethod
+  , confMethod :: ConfMethod
   , inputFormat :: InputFormat
   , smtSolver :: SMTSolver
   , verbose :: Bool
@@ -93,24 +103,62 @@ main = do
       putStrLn "ERROR"
       putStr e
       exitFailure
-    Right (n,ss,cs,axs,conjs) -> do
+    Right (n,ss,cs,ee,pd,axs,conjs) -> do
       case mode args of
+        Info -> esInfo (verbose args) ee pd axs
         Termination -> termination (termMethod args) (smtSolver args) (verbose args) (debug args) ss cs axs
+        Confluence -> undefined
         Unification -> unification n (verbose args) axs
         CPJoinability -> criticalPairsJoinability n (verbose args) axs
         ConjectureJoinability -> conjectureJoinability (verbose args) axs conjs
   stop <- getCurrentTime
-  fmtLn $ "time: " +|fixedF 3  (diffUTCTime stop start)|+"s"
+  when (verbose args) . fmtLn $ "time: " +|fixedF 3  (diffUTCTime stop start)|+"s"
 
 inputType :: Mode -> InputType
+inputType Info = ES
 inputType Termination = HRS
+inputType Confluence = DPRS
 inputType Unification = DHPUnifProblem 
 inputType CPJoinability = DPRS
 inputType ConjectureJoinability = HRS
 
 secondOrderRestriction :: TermMethod -> Bool
 secondOrderRestriction Poly = True
-secondOrderRestriction NCPO = False
+secondOrderRestriction _ = False
+
+prsRestriction :: ConfMethod -> Bool
+prsRestriction DC = True
+prsRestriction _ = False
+
+leftLinearRestriction :: ConfMethod -> Bool
+leftLinearRestriction OR = True
+leftLinearRestriction DC = True
+leftLinearRestriction _ = False
+
+-- |Checks input type of ES
+esTyp :: ES -> InputType
+esTyp es 
+  | not (all rule es)        = ES
+  | not (all dhpRule es)     = HRS
+  | not (all patternRule es) = DPRS
+  | otherwise                = PRS
+
+esInfo :: Bool -> Bool -> Bool -> ES -> IO ()
+esInfo v ee pd es = do
+    putStr . docToString . pretty $ esTyp es
+    if (all leftLinear es)
+      then putStr " left-linear"
+      else pure ()
+    if (all secondOrderEq es)
+      then putStr " second-order"
+      else pure ()
+    case (ee,pd) of
+      (False,True) -> putStrLn " (modifications: eta-expanded, pulled down to sort)"
+      (False,False) -> putStrLn " (modification: eta-expanded)"
+      (True,True) -> putStrLn " (modification: pulled down to sort)"
+      _ -> putStrLn ""
+    when v $ printES "\ninput:" es
+    when v $ putStrLn ""
 
 termination :: TermMethod -> SMTSolver -> Bool -> Bool -> [Sort] -> FunTypMap -> ES ->  IO ()
 termination Poly s v d _ cTyM hrs = do
@@ -204,16 +252,23 @@ argsParser = Args
       ( long "mode"
      <> short 'm'
      <> showDefault
-     <> value ConjectureJoinability
-     <> metavar "term | unif | cps | conj"
-     <> help "what the tool should do; termination, unification, critical pair analysis, or conjecture joinability" )
+     <> value Info
+     <> metavar "info | term | conf | unif | cps | conj"
+     <> help "what the tool should do; termination, confluence, unification, critical pair analysis, or conjecture joinability" )
   <*> option (eitherReader $ termMethodFromString . map toLower)
       ( long "term-method"
      <> short 't'
      <> showDefault
-     <> value NCPO
-     <> metavar "ncpo | poly"
+     <> value TAll
+     <> metavar "all | ncpo | poly"
      <> help "employed termination method" )
+  <*> option (eitherReader $ confMethodFromString . map toLower)
+      ( long "conf-method"
+     <> short 'c'
+     <> showDefault
+     <> value CAll
+     <> metavar "all | ortho | cp | dc"
+     <> help "employed confluence method" )
   <*> option (eitherReader $ inputFormatFromString . map toLower)
       ( long "input-format"
      <> short 'i'
@@ -239,15 +294,24 @@ argsParser = Args
 
 modeFromString :: String -> Either String Mode
 modeFromString "term" = Right Termination
+modeFromString "conf" = Right Confluence
 modeFromString "unif" = Right Unification
 modeFromString "cps" = Right CPJoinability
 modeFromString "conj" = Right ConjectureJoinability
-modeFromString _ = Left "supported modes are 'term', 'unif', 'cps', 'conf' and 'conj'"
+modeFromString _ = Left "supported modes are 'term', 'conf', 'unif', 'cps' and 'conj'"
 
 termMethodFromString :: String -> Either String TermMethod
+termMethodFromString "all" = Right TAll
 termMethodFromString "ncpo" = Right NCPO
 termMethodFromString "poly" = Right Poly
 termMethodFromString _ = Left "supported termination methods are 'ncpo' and 'poly'"
+
+confMethodFromString :: String -> Either String ConfMethod
+confMethodFromString "all" = Right CAll
+confMethodFromString "ortho" = Right OR
+confMethodFromString "cp" = Right CP
+confMethodFromString "dc" = Right DC
+confMethodFromString _ = Left "supported confluence methods are 'ortho', 'cp' and 'dc'"
 
 inputFormatFromString :: String -> Either String InputFormat
 inputFormatFromString "ari" = Right ARI

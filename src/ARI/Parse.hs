@@ -67,7 +67,7 @@ kind = fromText <$> (   symbolARI "sort"
 format :: Parser ()
 format = parensARI $ do
   void $ symbolARI "format"
-  void $ symbolARI "higher-order"
+  void $ (symbolARI "higher-order" <|> symbolARI "HRS")
 
 sortDecl ::Parser ()
 sortDecl = do

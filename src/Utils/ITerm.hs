@@ -9,7 +9,7 @@ import Prettyprinter (Pretty,pretty,align,emptyDoc,tupled)
 
 import Utils.Type (Id,Var)
 import Typ.Type (Typ(..))
-import Typ.Ops (liftTyp)
+import Typ.Ops (liftTyp,arity)
 import Term.Type (Term(..),Head(..))
 import Equation.Type (Equation(..))
 
@@ -81,6 +81,25 @@ shiftHead _ _ h = h
 shift :: Int -> Int -> ITerm -> ITerm
 shift i j (IMat pos ih a ts) = IMat pos (shiftHead i j ih) a $ map (shift i j) ts
 shift i j (ILam pos idt a s) = ILam pos idt a $ shift (i+1) j s
+
+containsFunctionalIEq :: IES -> Bool
+containsFunctionalIEq ies = or [(arity $ ityp  $ ilhs ie) /= 0 | ie <- ies]
+
+isEtaExpandedITerm :: Typ -> ITerm -> Bool
+isEtaExpandedITerm (Typ (_:as) b) (ILam _ _ _ s) = isEtaExpandedITerm (Typ as b) s
+isEtaExpandedITerm (Typ [] _) (ILam _ _ _ _) = error "impossible case"
+isEtaExpandedITerm (Typ [] _) (IMat _ _ (Just (Typ bs _)) ts) = and [isEtaExpandedITerm b t | (b,t) <- zip bs ts]
+isEtaExpandedITerm (Typ [] _) (IMat _ _ Nothing _) = error "type inference missing"
+isEtaExpandedITerm (Typ (_:_) _) (IMat _ _ _ _) = False
+
+-- |Checks whether an ilhs/irhs is eta-expanded below the root position
+isEtaExpandedITermBelowRoot :: ITerm -> Bool
+isEtaExpandedITermBelowRoot (IMat _ _ (Just (Typ bs _)) ts) = and [isEtaExpandedITerm b t | (b,t) <- zip bs ts]
+isEtaExpandedITermBelowRoot it = isEtaExpandedITerm (ityp it) it
+
+-- |Checks whether an intermediate ES is eta-expanded
+isEtaExpandedIESBelowRoot :: IES -> Bool
+isEtaExpandedIESBelowRoot ies = and [isEtaExpandedITermBelowRoot it | ieq <- ies, it <- [ilhs ieq, irhs ieq]]
 
 -- |Eta-expands an intermediate term
 etaExpand :: Typ -> ITerm -> ITerm

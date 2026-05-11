@@ -5,7 +5,7 @@ import qualified Data.Set as S
 
 import Typ.Ops (sort)
 import Term.Type (Term(..))
-import Term.Ops (freeVars,isHeadedByFreeVar,isDHP)
+import Term.Ops (freeVars,isHeadedByFreeVar,isDHP,isPattern,linear,secondOrder)
 import Subst.Ops (apply)
 import Subst.Match (match)
 import Equation.Type (Equation(..))
@@ -28,11 +28,25 @@ rule e = (a == b) && sort a && not (isHeadedByFreeVar (lhs e)) && varCondition e
   a = typ (lhs e)
   b = typ (rhs e)
 
+-- |Checks whether the given equation fulfills the conditions to be a pattern rule:
+-- * it is a valid rule
+-- * the left-hand side is a pattern
+patternRule :: Equation -> Bool
+patternRule e = rule e && isPattern (lhs e)
+
 -- |Checks whether the given equation fulfills the conditions to be a DHP rule:
 -- * it is a valid rule
 -- * the left-hand side is a DHP
 dhpRule :: Equation -> Bool
 dhpRule e = rule e && isDHP (lhs e)
+
+-- |Checks whether the given equation is left-linear
+leftLinear :: Equation -> Bool
+leftLinear e = linear (lhs e)
+
+-- |Checks whether the given equation is second-order
+secondOrderEq :: Equation -> Bool
+secondOrderEq e = secondOrder (lhs e) && secondOrder (rhs e)
 
 -- |Tests whether two DHP rules are variants.
 dhpRuleVariants :: Equation -> Equation -> Bool
@@ -40,4 +54,3 @@ dhpRuleVariants e1 e2
   | Just subst1 <- match (lhs e1) (lhs e2), Just subst2 <-match (lhs e2) (lhs e1) =
       apply subst1 (rhs e1) == (rhs e2) && apply subst2 (rhs e2) == (rhs e1)
   | otherwise = False
-

@@ -42,6 +42,23 @@ spec_secondOrder =
     it "rejects third-order term" $
       t3 `shouldNotSatisfy` secondOrder
 
+spec_linear :: Spec
+spec_linear =
+  describe "linear" $ do
+    let t1 = mkTerm Fun.f Typ.a [ mkTerm Var.x Typ.a []
+                                , mkTerm Var.y Typ.a []
+                                ]
+        t2 = mkTerm Fun.f Typ.a [ mkTerm Var.x Typ.a []
+                                , mkTerm Fun.g Typ.a [ mkTerm Var.x Typ.a [] ]
+                                ]
+        t3 = mkTerm Fun.f Typ.a [ mkTerm Var.x Typ.aa [ mkTerm Var.x Typ.aa [ mkTerm Fun.c Typ.a [] ] ] ]
+    it "accepts first-order term" $
+      t1 `shouldSatisfy` linear
+    it "rejects parallel counterexample" $
+      t2 `shouldNotSatisfy` linear
+    it "rejects nested counterexample" $
+      t3 `shouldNotSatisfy` linear
+
 spec_hdToTerm :: Spec
 spec_hdToTerm =
   describe "hdToTerm" $ do
@@ -146,7 +163,35 @@ spec_expandedSubtermRelEq =
       (t5,t7) `shouldNotSatisfy` (uncurry expandedSubtermEqRel)
     it "rejects DB shifted subterms" $
       (t8,t9) `shouldNotSatisfy` (uncurry expandedSubtermEqRel)
-    
+
+spec_isPattern :: Spec
+spec_isPattern =
+  describe "isPattern" $ do
+    let t1 = mkTerm Var.z Typ.aaa [ mkTerm DB.zero Typ.a []
+                                  , mkTerm DB.one Typ.a []
+                                  ]
+        t2 = mkTerm Var.z Typ.aaa [ mkTerm DB.zero Typ.a []
+                                  , mkTerm DB.zero Typ.a []
+                                  ]
+        t3 = mkTerm Var.z Typ.aaa [ mkTerm DB.one Typ.a []
+                                  , mkTerm Fun.c Typ.a []
+                                  ]
+        t4 = mkTerm Var.z Typ.aaa [ mkTerm Fun.c Typ.a [ mkTerm DB.zero Typ.a []] ]
+        t5 = mkTerm Var.z (Typ [Typ.aa,Typ.a] Sort.a)
+               [ mkTerm DB.one Typ.aa [ mkTerm DB.zero Typ.a [] ]
+               , mkTerm DB.one Typ.a []
+               ]
+    it "accepts second-order example" $
+      t1 `shouldSatisfy` isPattern
+    it "rejects duplicate arguments" $
+      t2 `shouldNotSatisfy` isPattern
+    it "rejects constant arguments" $
+      t3 `shouldNotSatisfy` isPattern
+    it "rejects proper DHPs" $
+      t4 `shouldNotSatisfy` isPattern
+    it "accepts third-order example" $
+      t5 `shouldSatisfy` isPattern
+
 spec_isDHP :: Spec
 spec_isDHP =
   describe "isDHP" $ do
@@ -208,10 +253,12 @@ termOpsSpecs :: Spec
 termOpsSpecs = describe "Term.Ops" $ do
   spec_freeVarsTypMap
   spec_secondOrder
+  spec_linear
   spec_hdToTerm
   spec_danglingDB
   spec_shiftDB
   spec_expandedTerm
   spec_expandedSubtermRelEq
+  spec_isPattern
   spec_isDHP
   spec_filteredSubterms

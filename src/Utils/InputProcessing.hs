@@ -16,22 +16,23 @@ import Text.Megaparsec (ParseError,ParseErrorBundle(..),errorBundlePretty)
 import Text.Megaparsec.State (initialPosState)
 
 import Utils.Type (Id(..),Var(..))
-import Utils.ITerm (IEquation(..),ITerm(..),IHead(..),iTermToTerm,iEqToEq)
+import Utils.ITerm (IEquation(..),ITerm(..),IHead(..),iTermToTerm,iEqToEq,isEtaExpandedIESBelowRoot,containsFunctionalIEq)
 import Utils.Parse (Env(..),ProblemParser,constructErrorGeneric)
 import qualified Utils.Parse as UP
 import Utils.TypeInference (inferTypeIEq)
 import Typ.Type (Typ(..),Sort)
 import Term.Type (FunTypMap)
-import Term.Ops (isHeadedByFreeVar,isDHP,secondOrder)
+import Term.Ops (isHeadedByFreeVar,isDHP,isPattern,secondOrder)
 import Equation.Type (ES)
 import Equation.Ops (varCondition)
 
 -- |type of input system
-data InputType = ES | HRS | DPRS | DHPUnifProblem
+data InputType = ES | HRS | PRS | DPRS | DHPUnifProblem
 
 instance Pretty InputType where
   pretty ES = "ES"
   pretty HRS = "HRS"
+  pretty PRS = "PRS"
   pretty DPRS = "DPRS"
   pretty DHPUnifProblem = "DHP unification problem"
 
@@ -40,7 +41,7 @@ instance Pretty InputType where
 -- * type inference
 -- * input type check
 processInput :: FilePath -> Text -> InputType -> Bool -> ProblemParser ->
-  Either String (Int,[Sort],FunTypMap,ES,ES)
+  Either String (Int,[Sort],FunTypMap,Bool,Bool,ES,ES)
 processInput file input inputType so parser = do
   (env,axs,conjs) <- first errorBundlePretty (parser file input)
   let (ss,fTyM) = processEnv env
@@ -51,7 +52,7 @@ processInput file input inputType so parser = do
         _ -> second maximum . unzip $ map pullDownToSort axsWithTyp
   axs'' <- mapM (prettyError . adjustToInputType inputType) axs'
   mapM_ (prettyError . restrictSO so) axs''
-  return (n, ss, fTyM, map iEqToEq axs', map iEqToEq conjs') where
+  return (n, ss, fTyM, isEtaExpandedIESBelowRoot axs', containsFunctionalIEq (map fst axsWithTyp), map iEqToEq axs', map iEqToEq conjs') where
     iState = initialPosState file input
     toBundle pe = ParseErrorBundle { bundleErrors = pe :| [], bundlePosState = iState }
     prettyError = first (errorBundlePretty . toBundle)
@@ -92,6 +93,11 @@ adjustToInputType HRS ie
   | not . varCondition . iEqToEq $ ie =
       Left $ constructITError HRS (iposr ie) "extra variables on right-hand side"
   | otherwise = Right $ ie{iisRule = True}
+adjustToInputType PRS ie
+  | not . isPattern . iTermToTerm . ilhs $ ie =
+      Left $ constructITError PRS (iposl ie)
+      "left-hand side is not a pattern"
+  | otherwise = Right ie
 adjustToInputType DPRS ie
   | not . isDHP . iTermToTerm . ilhs $ ie =
       Left $ constructITError DPRS (iposl ie)

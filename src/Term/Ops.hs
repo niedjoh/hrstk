@@ -3,7 +3,8 @@
 -- |collection of useful functions for simply-typed terms
 module Term.Ops where
 
-import Data.List.Extra (dropEnd,splitAtEnd)
+import Data.List (sort,group)
+import Data.List.Extra (dropEnd,splitAtEnd,anySame)
 import Data.Map.Strict (Map)
 import qualified Data.Map as M
 import Data.Set (Set)
@@ -52,6 +53,12 @@ isHeadedByFreeVar _ = False
 isDBTerm :: Term -> Bool
 isDBTerm s@(Term {hd = DB _}) = all isDBTerm (sp s)
 isDBTerm _ = False
+
+-- |Determines whether a given term is linear
+linear :: Term -> Bool
+linear = all (\xs -> length xs < 2)  . group . sort . go where
+  go s@(Term {hd = FV v}) = v : (concat [go t | t <- sp s])
+  go s = concat [go t | t <- sp s]
 
 -- |Checks whether the term has at most order two.
 -- More precicely, "second order" means hat all constants have types of order at most three,
@@ -120,6 +127,10 @@ expandedSubtermEqRel s t = expandedTerm t && go 0 s where
       i' = i + nlams u
       t'' = shiftDB i' t'
       recRes = or [go i' u' | u' <- sp u]
+
+isPattern :: Term -> Bool
+isPattern s@(Term {hd = FV _}) = all isDBTerm (sp s) && (not . anySame $ sp s)
+isPattern s = all isPattern (sp s)
 
 -- |Determines whether a given term is a deterministic higher-order pattern
 -- (free variables only have distinct ground arguments which contain at least
