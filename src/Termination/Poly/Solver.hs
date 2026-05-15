@@ -49,8 +49,8 @@ data PolyIntRes = PolyIntRes
 
 -- |Check termination of an HRS using polynomial interpretations.
 checkTermination ::SMTSolver -> Bool -> FunTypMap -> ES -> IO PolyIntRes
-checkTermination (Solver _ s _) debug constTyM es = do
-  let (cIMapWStricts,n) = runState (constIntMapWithStricts constTyM) 0
+checkTermination (Solver _ s _) debug fTyM es = do
+  let (cIMapWStricts,n) = runState (constIntMapWithStricts fTyM) 0
       cIMap = M.map fst cIMapWStricts
       stricts = concatMap snd $ M.elems cIMapWStricts
       fpps = map (\e -> (interpret cIMap (lhs e), interpret cIMap (rhs e))) es

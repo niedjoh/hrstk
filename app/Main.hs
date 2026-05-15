@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Main where
 
@@ -45,6 +46,7 @@ import Equation.Ops (rule, dhpRule, patternRule, leftLinear, secondOrderEq)
 import qualified Subst.Unif as Unif
 import qualified Equation.Rewriting as RW
 import qualified Equation.CriticalPairs as CP
+import Termination
 import qualified Termination.Poly.Solver as Poly
 import qualified Termination.NCPO.Solver as NCPO
 import qualified TPTP
@@ -65,13 +67,7 @@ instance Show Mode where
   show CPJoinability = "cps"
   show ConjectureJoinability = "conj"
 
-data TermMethod = TAll | NCPO | Poly
-
-instance Show TermMethod where
-  show NCPO = "ncpo"
-  show Poly = "poly"
-
-data ConfMethod = CAll | OR | CP | DC
+data ConfMethod = OR | CP | DC
 
 instance Show ConfMethod where
   show OR = "orthogonality"
@@ -81,8 +77,8 @@ instance Show ConfMethod where
 data Args = Args
   { inputFile :: String
   , mode :: Mode
-  , termMethod :: TermMethod
-  , confMethod :: ConfMethod
+  , termMethod :: Maybe TermMethod
+  , confMethod :: Maybe ConfMethod
   , inputFormat :: InputFormat
   , smtSolver :: SMTSolver
   , verbose :: Bool
@@ -122,17 +118,17 @@ inputType Unification = DHPUnifProblem
 inputType CPJoinability = DPRS
 inputType ConjectureJoinability = HRS
 
-secondOrderRestriction :: TermMethod -> Bool
-secondOrderRestriction Poly = True
+secondOrderRestriction :: Maybe TermMethod -> Bool
+secondOrderRestriction (Just Poly) = True
 secondOrderRestriction _ = False
 
-prsRestriction :: ConfMethod -> Bool
-prsRestriction DC = True
+prsRestriction :: Maybe ConfMethod -> Bool
+prsRestriction (Just DC) = True
 prsRestriction _ = False
 
-leftLinearRestriction :: ConfMethod -> Bool
-leftLinearRestriction OR = True
-leftLinearRestriction DC = True
+leftLinearRestriction :: Maybe ConfMethod -> Bool
+leftLinearRestriction (Just OR) = True
+leftLinearRestriction (Just DC) = True
 leftLinearRestriction _ = False
 
 -- |Checks input type of ES
@@ -146,10 +142,10 @@ esTyp es
 esInfo :: Bool -> Bool -> Bool -> ES -> IO ()
 esInfo v ee pd es = do
     putStr . docToString . pretty $ esTyp es
-    if (all leftLinear es)
+    if all leftLinear es
       then putStr " left-linear"
       else pure ()
-    if (all secondOrderEq es)
+    if all secondOrderEq es
       then putStr " second-order"
       else pure ()
     case (ee,pd) of
@@ -160,19 +156,29 @@ esInfo v ee pd es = do
     when v $ printES "\ninput:" es
     when v $ putStrLn ""
 
-termination :: TermMethod -> SMTSolver -> Bool -> Bool -> [Sort] -> FunTypMap -> ES ->  IO ()
-termination Poly s v d _ cTyM hrs = do
-  res <- Poly.checkTermination s d cTyM hrs
-  if Poly.status res
+termination :: Maybe TermMethod -> SMTSolver -> Bool -> Bool -> [Sort] -> FunTypMap -> ES ->  IO ()
+termination (Just tm) s v d bts fTyM hrs = do
+  res  <- checkTermination tm s d bts fTyM hrs
+  if terminationStatus res
     then putStrLn "YES"
     else putStrLn "MAYBE"
-  when v . putDoc $ Poly.resultDoc res hrs
-termination NCPO s v d bts cTyM hrs = do
-  res <- NCPO.checkTermination s d bts cTyM hrs
-  if NCPO.status res
-    then putStrLn "YES"
-    else putStrLn "MAYBE"
-  when v . putDoc $ NCPO.resultDoc res hrs
+  when v . putDoc $ terminationResultDoc res hrs
+termination Nothing s v d bts fTyM hrs = do
+  resNCPO <- checkTermination NCPO s d bts fTyM hrs
+  if terminationStatus resNCPO
+    then do
+      putStrLn "YES"
+      when v . putDoc $ terminationResultDoc resNCPO hrs
+    else do
+      if all secondOrderEq hrs
+        then do
+          resPoly <- checkTermination Poly s d bts fTyM hrs
+          if terminationStatus resPoly
+            then do
+              putStrLn "YES"
+              when v . putDoc $ terminationResultDoc resPoly hrs
+            else putStrLn "MAYBE"
+        else putStrLn "MAYBE"
 
 criticalPairsJoinability :: Int -> Bool -> ES -> IO ()
 criticalPairsJoinability n v dprs = case evalState (runMaybeT $ CP.criticalPairs dprs dprs) n of
@@ -259,16 +265,16 @@ argsParser = Args
       ( long "term-method"
      <> short 't'
      <> showDefault
-     <> value TAll
-     <> metavar "all | ncpo | poly"
-     <> help "employed termination method" )
+     <> value Nothing
+     <> metavar "ncpo | poly"
+     <> help "specific termination method" )
   <*> option (eitherReader $ confMethodFromString . map toLower)
       ( long "conf-method"
      <> short 'c'
      <> showDefault
-     <> value CAll
-     <> metavar "all | ortho | cp | dc"
-     <> help "employed confluence method" )
+     <> value Nothing
+     <> metavar "ortho | cp | dc"
+     <> help "specific confluence method" )
   <*> option (eitherReader $ inputFormatFromString . map toLower)
       ( long "input-format"
      <> short 'i'
@@ -300,17 +306,15 @@ modeFromString "cps" = Right CPJoinability
 modeFromString "conj" = Right ConjectureJoinability
 modeFromString _ = Left "supported modes are 'term', 'conf', 'unif', 'cps' and 'conj'"
 
-termMethodFromString :: String -> Either String TermMethod
-termMethodFromString "all" = Right TAll
-termMethodFromString "ncpo" = Right NCPO
-termMethodFromString "poly" = Right Poly
+termMethodFromString :: String -> Either String (Maybe TermMethod)
+termMethodFromString "ncpo" = Right (Just NCPO)
+termMethodFromString "poly" = Right (Just Poly)
 termMethodFromString _ = Left "supported termination methods are 'ncpo' and 'poly'"
 
-confMethodFromString :: String -> Either String ConfMethod
-confMethodFromString "all" = Right CAll
-confMethodFromString "ortho" = Right OR
-confMethodFromString "cp" = Right CP
-confMethodFromString "dc" = Right DC
+confMethodFromString :: String -> Either String (Maybe ConfMethod)
+confMethodFromString "ortho" = Right (Just OR)
+confMethodFromString "cp" = Right (Just CP)
+confMethodFromString "dc" = Right (Just DC)
 confMethodFromString _ = Left "supported confluence methods are 'ortho', 'cp' and 'dc'"
 
 inputFormatFromString :: String -> Either String InputFormat

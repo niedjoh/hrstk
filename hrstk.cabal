@@ -61,6 +61,7 @@ library hrstk-lib
     , Equation.Ops
     , Equation.Rewriting
     , Equation.CriticalPairs
+    , Termination
     , Termination.NCPO
     , Termination.NCPO.Type
     , Termination.NCPO.Ordering
@@ -84,6 +85,7 @@ library hrstk-lib
     , mtl
     , multiset
     , prettyprinter
+    , singletons-th
     , smtlib-backends-process
     , text
     , transformers ^>= 0.6.1.2

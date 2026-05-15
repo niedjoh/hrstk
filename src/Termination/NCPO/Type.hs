@@ -112,4 +112,4 @@ type CPOSolution = ( SortPrecedence Integer
                    , Precedence Integer
                    , Basic Bool
                    , Acc Bool
-                   )
+                   )                   
