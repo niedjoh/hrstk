@@ -8,7 +8,9 @@ import Data.List.NonEmpty (NonEmpty,(<|),singleton)
 import qualified Data.List.NonEmpty as NEL
 import Prettyprinter (Doc,vsep,hcat,pretty,line,align,(<+>))
 
+import Utils.Misc (allPossibilities)
 import Utils.Pretty (prettySequence)
+import Typ.Ops (returnTyp)
 import Term.Type (Term(..),Subterm)
 import Term.Ops (filteredSubterms,isFun)
 import Equation.Type (ES,Equation(..))
@@ -36,6 +38,19 @@ possibleSteps es s =
   , typ (lhs e) == typ t
   , Just t' <- [rootRewriteStep e t] ]
 
+possibleRootMultiSteps :: ES -> Term -> [Term]
+possibleRootMultiSteps es s = [apply subst (rhs e) | (Just subst,e) <- matches ] where
+  matches = [ (msubst,e) | e <- es, let msubst = match (lhs e) s ]
+
+possibleMultiSteps :: ES -> Term -> [Term]
+possibleMultiSteps es s@(Term {nlams = 0}) = us ++ concatMap (possibleRootMultiSteps es) us where
+  us = [ s{sp = ts}
+       | ts <- allPossibilities $ map (possibleMultiSteps es) (sp s)
+       ]
+possibleMultiSteps es s = [ t{nlams = nlams s, typ = typ s}
+                          | t <- possibleMultiSteps es s{nlams = 0, typ = returnTyp (typ s)}
+                          ]
+
 -- |Rewrites a given term to its normal forms with respect
 -- to the given ES
 rewriteToNFs :: ES -> Term -> [Term]
@@ -56,9 +71,13 @@ rewriteSequencesToNF es s = case possibleSteps es s of
 joinable :: ES -> Equation -> Bool
 joinable es e = not . null $ intersect (rewriteToNFs es (lhs e)) (rewriteToNFs es (rhs e))
 
+-- | Determines whether an equation is "multistep-joinable", i.e., development closed.
+msJoinable :: ES -> Equation -> Bool
+msJoinable es e = rhs e `elem` possibleMultiSteps es (lhs e)
+
 -- |Prettyprinter of joinability of conjectures given axioms
-joinabilityDoc :: ES -> ES -> Doc a
-joinabilityDoc es1 es2 = (vsep . map jd $ zip es2 [1 :: Int ..]) <> line <> line where
+joinabilityDoc :: ES -> ES -> Doc ann
+joinabilityDoc es1 es2 = (vsep . map jd $ zip es2 [1 :: Int ..]) where
   jd (e,i) = let
     (lseqs,rseqs) = (rewriteSequencesToNF es1 (lhs e), rewriteSequencesToNF es1 (rhs e))
     in line <> "#" <> pretty i <+>
@@ -67,3 +86,12 @@ joinabilityDoc es1 es2 = (vsep . map jd $ zip es2 [1 :: Int ..]) <> line <> line
                (lseq,rseq):_ -> "joinable" <> prettySequence lseq <> prettySequence rseq
                [] -> "not joinable" <> hcat (map prettySequence lseqs) <> hcat (map prettySequence rseqs)
              )
+
+msJoinabilityDoc :: ES -> ES -> Doc ann
+msJoinabilityDoc es1 es2 = (vsep . map jd $ zip es2 [1 :: Int ..]) where
+  jd (e,i) = line <> "#" <> pretty i <+>
+       align (pretty e <> line <> line <>
+              (if rhs e `elem` possibleMultiSteps es1 (lhs e)
+                 then "connected by right multistep"
+                 else "not connected by right multistep"
+              ))

@@ -13,6 +13,7 @@ import Prettyprinter (Doc)
 import Utils.SMT (SMTSolver)
 import Term.Type (FunTypMap)
 import Equation.Type (ES)
+import Equation.Ops (secondOrderEq)
 import Typ.Type (Sort)
 import qualified Termination.NCPO as NCPO
 import qualified Termination.Poly as Poly
@@ -38,9 +39,23 @@ terminationStatus (MkSomeTermRes SPoly res) = Poly.status res
 
 checkTermination :: TermMethod -> SMTSolver -> Bool -> [Sort] -> FunTypMap -> ES -> IO SomeTermRes
 checkTermination NCPO s d bts fTyM hrs = MkSomeTermRes SNCPO <$> NCPO.checkTermination s d bts fTyM hrs
-checkTermination Poly s d _ fTyM hrs = MkSomeTermRes SPoly <$> Poly.checkTermination s d fTyM hrs
+checkTermination Poly s d _ fTyM hrs
+  | all secondOrderEq hrs = MkSomeTermRes SPoly <$> Poly.checkTermination s d fTyM hrs
+  | otherwise             = pure $ MkSomeTermRes SPoly $ Poly.failRes
 
-terminationResultDoc :: SomeTermRes -> ES -> Doc ann
+terminationResultDoc :: SomeTermRes -> Doc ann
 terminationResultDoc (MkSomeTermRes SNCPO res) = NCPO.resultDoc res
-terminationResultDoc (MkSomeTermRes SPoly res) = Poly.resultDoc res   
-    
+terminationResultDoc (MkSomeTermRes SPoly res) = Poly.resultDoc res
+
+terminationStrategy :: [TermMethod] -> SMTSolver -> Bool -> [Sort] -> FunTypMap -> ES -> IO SomeTermRes
+terminationStrategy [] _ _ _ _ _ = pure $ MkSomeTermRes SNCPO $ NCPO.failRes
+terminationStrategy (tm:tms) s d bts fTyM hrs = do
+  res <- checkTermination tm s d bts fTyM hrs
+  if terminationStatus res
+    then pure res
+    else terminationStrategy tms s d bts fTyM hrs
+  
+  
+
+
+

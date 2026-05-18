@@ -49,6 +49,7 @@ import qualified Equation.CriticalPairs as CP
 import Termination
 import qualified Termination.Poly.Solver as Poly
 import qualified Termination.NCPO.Solver as NCPO
+import Confluence
 import qualified TPTP
 import qualified ARI
 
@@ -58,21 +59,13 @@ instance Show InputFormat where
   show ARI = "ari"
   show TPTP = "tptp"
 
-data Mode = Info | Termination | Confluence | Unification | CPJoinability | ConjectureJoinability
+data Mode = Info | Termination | Confluence | Unification | ConjectureJoinability
 
 instance Show Mode where
   show Termination = "term"
   show Confluence = "conf"
   show Unification = "unif"
-  show CPJoinability = "cps"
   show ConjectureJoinability = "conj"
-
-data ConfMethod = OR | CP | DC
-
-instance Show ConfMethod where
-  show OR = "orthogonality"
-  show CP = "terminating + joinable CPs"
-  show DC = "development closedness"
 
 data Args = Args
   { inputFile :: String
@@ -94,6 +87,8 @@ main = do
                     input
                     (inputType (mode args))
                     (secondOrderRestriction (termMethod args))
+                    (leftLinearRestriction (confMethod args))
+                    (prsRestriction (confMethod args))
                     (chooseParser (inputFormat args)) of
     Left e -> do
       putStrLn "ERROR"
@@ -103,19 +98,17 @@ main = do
       case mode args of
         Info -> esInfo (verbose args) ee pd axs
         Termination -> termination (termMethod args) (smtSolver args) (verbose args) (debug args) ss cs axs
-        Confluence -> undefined
+        Confluence -> confluence (confMethod args) n (smtSolver args) (verbose args)  (debug args) ss cs axs
         Unification -> unification n (verbose args) axs
-        CPJoinability -> criticalPairsJoinability n (verbose args) axs
         ConjectureJoinability -> conjectureJoinability (verbose args) axs conjs
   stop <- getCurrentTime
-  when (verbose args) . fmtLn $ "time: " +|fixedF 3  (diffUTCTime stop start)|+"s"
+  when (verbose args) . fmtLn $ "\n\ntime: " +|fixedF 3  (diffUTCTime stop start)|+"s"
 
 inputType :: Mode -> InputType
 inputType Info = ES
 inputType Termination = HRS
 inputType Confluence = DPRS
 inputType Unification = DHPUnifProblem 
-inputType CPJoinability = DPRS
 inputType ConjectureJoinability = HRS
 
 secondOrderRestriction :: Maybe TermMethod -> Bool
@@ -153,60 +146,62 @@ esInfo v ee pd es = do
       (False,False) -> putStrLn " (modification: eta-expanded)"
       (True,True) -> putStrLn " (modification: pulled down to sort)"
       _ -> putStrLn ""
-    when v $ printES "\ninput:" es
-    when v $ putStrLn ""
+    when v $ printES "input:" es
 
 termination :: Maybe TermMethod -> SMTSolver -> Bool -> Bool -> [Sort] -> FunTypMap -> ES ->  IO ()
-termination (Just tm) s v d bts fTyM hrs = do
-  res  <- checkTermination tm s d bts fTyM hrs
-  if terminationStatus res
-    then putStrLn "YES"
-    else putStrLn "MAYBE"
-  when v . putDoc $ terminationResultDoc res hrs
-termination Nothing s v d bts fTyM hrs = do
-  resNCPO <- checkTermination NCPO s d bts fTyM hrs
-  if terminationStatus resNCPO
-    then do
-      putStrLn "YES"
-      when v . putDoc $ terminationResultDoc resNCPO hrs
-    else do
-      if all secondOrderEq hrs
-        then do
-          resPoly <- checkTermination Poly s d bts fTyM hrs
-          if terminationStatus resPoly
-            then do
-              putStrLn "YES"
-              when v . putDoc $ terminationResultDoc resPoly hrs
-            else putStrLn "MAYBE"
-        else putStrLn "MAYBE"
+termination mtm s v d bts fTyM hrs = let
+  termFun = case mtm of
+    Just tm -> checkTermination tm
+    Nothing -> terminationStrategy [NCPO,Poly]
+  in do
+    res  <- termFun s d bts fTyM hrs
+    if terminationStatus res
+      then do
+        putStrLn "YES"
+        when v . printES "input HRS:" $ hrs
+      else do
+        putStrLn "MAYBE"
+        when v . printES "input HRS:" $ hrs
+    when v . putDoc $ terminationResultDoc res
 
-criticalPairsJoinability :: Int -> Bool -> ES -> IO ()
-criticalPairsJoinability n v dprs = case evalState (runMaybeT $ CP.criticalPairs dprs dprs) n of
+confluence :: Maybe ConfMethod -> Int -> SMTSolver -> Bool -> Bool -> [Sort] -> FunTypMap -> ES -> IO ()
+confluence mcm n s v d bts fTyM dprs = case evalState (runMaybeT $ CP.criticalPairs dprs dprs) n of
   Nothing -> do
     putStrLn "MAYBE"
     when v . printES "input DPRS:" $ dprs
     when v . putStrLn $ "\npossibly infinite behavior underlying unification\n"
-  Just cpairs -> do
-    if CP.checkJoinability dprs cpairs
-      then putStrLn "YES"
-      else putStrLn "MAYBE"
-    when v . putDoc $ CP.resultDoc dprs cpairs
-
+  Just cpairs -> let
+    confFun = case mcm of
+      Just cm  -> checkConfluence cm
+      Nothing  -> confluenceStrategy [OR,DC,KB]
+    in do
+      res <- confFun s d bts fTyM dprs cpairs
+      if confluenceStatus res
+        then do
+          putStrLn "YES"
+          when v . printES "input DPRS:" $ dprs
+        else do
+          putStrLn "MAYBE"
+          when v . printES "input DPRS:" $ dprs
+      when v . putDoc $ confluenceResultDoc res
+          
 conjectureJoinability :: Bool -> ES -> ES -> IO ()
 conjectureJoinability v dprs conjs = do
   if all (RW.joinable dprs) conjs
     then putStrLn "YES"
     else putStrLn "MAYBE"
-  when v $ putStrLn "" >> printES "input DPRS:" dprs
+  when v $ printES "input DPRS:" dprs
   when v . unless (null conjs) $ do
-    putStrLn "" >> printNES "input conjectures:" conjs
+    putStrLn ""
+    printNES "input conjectures:" conjs
+    putStrLn ""
     putStrLn "checking joinability of conjectures:"
     putDoc $ RW.joinabilityDoc dprs conjs
 
 unification :: Int -> Bool -> ES -> IO ()
 unification n v (e:es) = case evalState (runMaybeT $ Unif.unif (lhs e) (rhs e)) n of
   Nothing -> do
-    putStrLn "MAYBE\n"
+    putStrLn "MAYBE"
     when v . printES "input DHP unification problem:" $ [e]
     when v . putStrLn $ "\npossibly infinite behavior\n"
   Just substs -> do
@@ -224,28 +219,26 @@ chooseParser TPTP = parseProblem scTPTP (TPTP.parser)
 
 printES :: String -> ES -> IO ()
 printES s es = do
+  putStrLn ""
   putStrLn s
+  putStrLn ""
   if null es
     then putStrLn "none"
-    else do
-      putStrLn ""
-      putDoc . vsep $ map pretty es
-      putStrLn ""
+    else putDoc . vsep $ map pretty es
 
 printNES :: String -> ES -> IO ()
 printNES s es = do
+  putStrLn ""
   putStrLn s
+  putStrLn ""
   if null es
     then putStrLn "none"
-    else do
-      putStrLn ""
-      putDoc . prettyNList . map pretty $ es
-      putStrLn ""
+    else putDoc . prettyNList . map pretty $ es
 
 opts :: ParserInfo Args
 opts = info (argsParser <**> helper)
   ( fullDesc
-  <> progDesc ("reads a file containing an (equational) HRS a la Nipkow " ++
+  <> progDesc ("reads a file containing an HES/HRS " ++
                "and performs analysis according to one of the modes")
   <> header "hrstk - higher-order rewriting toolkit" )
 
@@ -259,8 +252,8 @@ argsParser = Args
      <> short 'm'
      <> showDefault
      <> value Info
-     <> metavar "info | term | conf | unif | cps | conj"
-     <> help "what the tool should do; termination, confluence, unification, critical pair analysis, or conjecture joinability" )
+     <> metavar "info | term | conf | unif | conj"
+     <> help "what the tool should do; termination, confluence, unification or conjecture joinability" )
   <*> option (eitherReader $ termMethodFromString . map toLower)
       ( long "term-method"
      <> short 't'
@@ -273,7 +266,7 @@ argsParser = Args
      <> short 'c'
      <> showDefault
      <> value Nothing
-     <> metavar "ortho | cp | dc"
+     <> metavar "ortho | dc | lc | kb"
      <> help "specific confluence method" )
   <*> option (eitherReader $ inputFormatFromString . map toLower)
       ( long "input-format"
@@ -299,12 +292,12 @@ argsParser = Args
      <> help "output SMT debug information" )
 
 modeFromString :: String -> Either String Mode
+modeFromString "info" = Right Info
 modeFromString "term" = Right Termination
 modeFromString "conf" = Right Confluence
 modeFromString "unif" = Right Unification
-modeFromString "cps" = Right CPJoinability
 modeFromString "conj" = Right ConjectureJoinability
-modeFromString _ = Left "supported modes are 'term', 'conf', 'unif', 'cps' and 'conj'"
+modeFromString _ = Left "supported modes are 'info', 'term', 'conf', 'unif', and 'conj'"
 
 termMethodFromString :: String -> Either String (Maybe TermMethod)
 termMethodFromString "ncpo" = Right (Just NCPO)
@@ -313,9 +306,10 @@ termMethodFromString _ = Left "supported termination methods are 'ncpo' and 'pol
 
 confMethodFromString :: String -> Either String (Maybe ConfMethod)
 confMethodFromString "ortho" = Right (Just OR)
-confMethodFromString "cp" = Right (Just CP)
 confMethodFromString "dc" = Right (Just DC)
-confMethodFromString _ = Left "supported confluence methods are 'ortho', 'cp' and 'dc'"
+confMethodFromString "lc" = Right (Just LC)
+confMethodFromString "kb" = Right (Just KB)
+confMethodFromString _ = Left "supported confluence methods are 'ortho', 'dc', 'lc' and 'kb'"
 
 inputFormatFromString :: String -> Either String InputFormat
 inputFormatFromString "ari" = Right ARI

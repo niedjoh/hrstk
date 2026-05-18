@@ -171,5 +171,5 @@ resultDoc :: Equation -> [Subst] -> Doc ann
 resultDoc e substs = line <> "input DHP unification problem: " <> line <> line <>
   pretty e <> line <> line <> "unifiers:" <> line <>
   if null substs
-    then "none" <> line <> line
-    else line <> vsep (map pretty substs) <> line <> line
+    then "none"
+    else line <> vsep (map pretty substs)

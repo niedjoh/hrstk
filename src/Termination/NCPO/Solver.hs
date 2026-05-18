@@ -14,7 +14,7 @@ import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import qualified Language.Hasmtlib as SMT
 import Language.Hasmtlib (Orderable(..),Boolean(..),and)
-import Prettyprinter (line,vsep,hsep,pretty,(<+>),Doc,line,punctuate,hsep,encloseSep)
+import Prettyprinter (line,vsep,hsep,pretty,(<+>),Doc,line,punctuate,hsep,encloseSep,emptyDoc)
 
 import Utils.Type (Id(..),Accessor(..))
 import Utils.SMT (SMTSolver(..),Constraint,smtVarMap)
@@ -31,6 +31,11 @@ data NCPORes = NCPORes
   , mSol :: Maybe CPOSolution
   }
 
+failRes :: NCPORes
+failRes = NCPORes { status = False
+                  , mSol = Nothing
+                  }
+                
 -- |Converts a sort precedence to an easily printable list representation
 -- (a list of lists of equivalent elements in decreasing order)
 sPrecToList :: Ord a => SortPrecedence a -> [[Id]]
@@ -113,8 +118,8 @@ checkTermination (Solver _ s _) debug ss fTyps hrs = do
   return $ NCPORes { status = boolRes, mSol = msol }
 
 -- |Print the result of a solution attempt to a termination check using NCPO.
-resultDoc :: NCPORes -> ES -> Doc ann
-resultDoc res hrs = let
+resultDoc :: NCPORes -> Doc ann
+resultDoc res = let
     prettySortPrec prec =
       hsep . punctuate " >" $ [ hsep . punctuate " ~" $ [pretty idt | idt <- eqs]
                               | eqs <- sPrecToList prec]
@@ -127,12 +132,12 @@ resultDoc res hrs = let
     prettyAcc (Acc m) =
       vsep [pretty c <> ":" <+> encloseSep "{" "}" "," (map pretty (i:map snd xs))
            | ((c,i):xs) <- groupBy (\x y -> fst x == fst y) . M.keys . M.filter id $ m]
-    inputHRS = line <> "input HRS:" <> line <> line <> vsep (map pretty hrs)
   in case mSol res of
-    Just (sortPrec,st,funPrec,basic,acc) -> inputHRS <> line <> line <>
+    Just (sortPrec,st,funPrec,basic,acc) -> line <> line <>
+      "termination proof by NCPO" <> line <> line <>
       "status:" <> line <> line <>  prettyStatus st <> line <> line <>
       "sort precedence:" <> line <> line <> prettySortPrec sortPrec <> line <> line <>
       "function symbol precedence:" <> line <> line <> prettyFunPrec funPrec st <> line <> line <>
       "basic sorts:" <> line <> line <> prettyBasic basic <> line <> line <>
-      "accessible arguments:" <> line <> line <> prettyAcc acc <> line <> line
-    Nothing -> inputHRS <> line <> line
+      "accessible arguments:" <> line <> line <> prettyAcc acc
+    Nothing -> emptyDoc

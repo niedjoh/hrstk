@@ -4,7 +4,7 @@
 {-# LANGUAGE DataKinds #-}
 
 -- |Solver for polynomial interpretations. Limited to second-order terms.
-module Termination.Poly.Solver (PolyIntRes(status),checkTermination,resultDoc) where
+module Termination.Poly.Solver (PolyIntRes(status),checkTermination,resultDoc,failRes) where
 
 import Control.Monad (foldM,zipWithM)
 import Control.Monad.Extra (concatMapM)
@@ -45,7 +45,16 @@ data PolyIntRes = PolyIntRes
   , mSolVec :: Maybe (Vec Integer)
   , cIntMap :: Map Id FPolynomial
   , constrs :: [(FPolynomial,FPolynomial)]
+  , system :: ES
   }
+
+failRes :: PolyIntRes
+failRes = PolyIntRes { status = False
+                     , mSolVec = Nothing
+                     , cIntMap = M.empty
+                     , constrs = []
+                     , system = []
+                     }
 
 -- |Check termination of an HRS using polynomial interpretations.
 checkTermination ::SMTSolver -> Bool -> FunTypMap -> ES -> IO PolyIntRes
@@ -65,16 +74,16 @@ checkTermination (Solver _ s _) debug fTyM es = do
         SMT.Sat -> True
         SMT.Unsat -> False
         SMT.Unknown -> False
-  return $ PolyIntRes { status = boolRes, mSolVec = mSol, cIntMap = cIMap, constrs = fpps }
+  return $ PolyIntRes { status = boolRes, mSolVec = mSol, cIntMap = cIMap, constrs = fpps, system = es  }
 
 -- |Print the result of a solution attempt to a termination check using polynomial interpretations.
-resultDoc :: PolyIntRes -> ES -> Doc ann
-resultDoc res es = let
+resultDoc :: PolyIntRes -> Doc ann
+resultDoc res = let
+   hrs = system res
    prettyConstr (p,q) e = line <> pretty e <> line <> line <> " " <+> pretty p <> line <> ">" <+> pretty q
    cIntD = line <> line <> "constant interpretations:" <> line <> line <>
      vsep (map (\(idt,fp) -> "⟦" <> pretty idt <> "⟧" <+> "=" <+> pretty fp) (M.assocs (cIntMap res)))
-   constrD = line <> line <> "constraints:" <> line <> vsep (zipWith prettyConstr (constrs res) es)
-   inputHRS = line <> "input HRS:" <> line <> line <> vsep (map pretty es)
+   constrD = line <> line <> "constraints:" <> line <> vsep (zipWith prettyConstr (constrs res) hrs)
  in case mSolVec res of
   Just (Vec sol) -> do
     let solInt = V.map integerToInt sol
@@ -84,13 +93,14 @@ resultDoc res es = let
           qSolved <- parFPolyToIntFPoly solInt q
           return (normApplPVarFPoly pSolved, normApplPVarFPoly qSolved)
     case mConstrsSolved of
-      Just constrsSolved -> inputHRS <> cIntD <> constrD <>
+      Just constrsSolved -> line <> line <>
+        "termination proof by polynomial interpretation" <> cIntD <> constrD <>
         line <> line <> "solution:" <> line <> line <>
         vsep (zipWith (\k i -> "a" <> pretty i <+> "⟼" <+> pretty k) (V.toList solInt) [(0 :: Int) .. ]) <>
         line <> line <> "solved constraints:" <> line <>
-        vsep (zipWith prettyConstr constrsSolved es) <> line <> line
+        vsep (zipWith prettyConstr constrsSolved hrs)
       Nothing -> "ERROR (something went wrong while constructing the solution)"
-  Nothing -> inputHRS <> cIntD <> constrD <> line <> line
+  Nothing -> cIntD <> constrD
 
 -- |Calculate the value of a parameter according to a solution vector for parameter variables.
 -- TODO return the solution directly and move this into Codec

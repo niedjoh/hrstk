@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!DOCTYPE benchmark PUBLIC "+//IDN sosy-lab.org//DTD BenchExec benchmark 3.30//EN" "https://www.sosy-lab.org/benchexec/benchmark-3.30.dtd">
+<benchmark tool="hrstk"
+           displayName="hrstk-sn"
+           walltimelimit="10s">
+
+  <rundefinition name="ncpo">
+    <option name="-m">conf</option>
+    <option name="-v"></option>
+  </rundefinition>
+
+  <tasks name="TPDB">
+    <include>~/ari-cops/*.ari</include>
+  </tasks>
+
+</benchmark>

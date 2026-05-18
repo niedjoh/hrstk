@@ -11,6 +11,7 @@ import qualified Data.Set as S
 import Language.Hasmtlib (Equatable(..),Orderable(..),Boolean(..),and,or,false)
 
 import Utils.Type (Accessor(..),Var,Id)
+import Utils.Misc (allPossibilities)
 import Utils.SMT (Constraint,(<&&>),(<&&),(<||>))
 import Utils.FreshMonad (FreshM,freshVar)
 import Typ.Type (Typ(..))
@@ -179,6 +180,4 @@ sso varRec vars s@(Term {typ = Typ [] a}) t =
                     Just uxs -> pure . bool $ uxs == t
                     Nothing -> pure false
               or <$> traverse f possibleVarLists
-    allPossibilities [] = [[]]
-    allPossibilities (xs:xss) = concat [map (x:) (allPossibilities xss) | x <- xs]
 sso varRec _ s t = ncpo varRec Compare S.empty s t

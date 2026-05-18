@@ -21,8 +21,8 @@ import Utils.Parse (Env(..),ProblemParser,constructErrorGeneric)
 import qualified Utils.Parse as UP
 import Utils.TypeInference (inferTypeIEq)
 import Typ.Type (Typ(..),Sort)
-import Term.Type (FunTypMap)
-import Term.Ops (isHeadedByFreeVar,isDHP,isPattern,secondOrder)
+import Term.Type (Term,FunTypMap)
+import Term.Ops (isHeadedByFreeVar,isDHP,isPattern,secondOrder,linear)
 import Equation.Type (ES)
 import Equation.Ops (varCondition)
 
@@ -40,9 +40,9 @@ instance Pretty InputType where
 -- * parsing
 -- * type inference
 -- * input type check
-processInput :: FilePath -> Text -> InputType -> Bool -> ProblemParser ->
+processInput :: FilePath -> Text -> InputType -> Bool -> Bool -> Bool -> ProblemParser ->
   Either String (Int,[Sort],FunTypMap,Bool,Bool,ES,ES)
-processInput file input inputType so parser = do
+processInput file input inputType so ll pr parser = do
   (env,axs,conjs) <- first errorBundlePretty (parser file input)
   let (ss,fTyM) = processEnv env
   axsWithTyp <- mapM (prettyError . inferTypeIEq) axs
@@ -51,7 +51,9 @@ processInput file input inputType so parser = do
         DHPUnifProblem -> (map fst axsWithTyp,0)
         _ -> second maximum . unzip $ map pullDownToSort axsWithTyp
   axs'' <- mapM (prettyError . adjustToInputType inputType) axs'
-  mapM_ (prettyError . restrictSO so) axs''
+  mapM_ (prettyError . restrict so secondOrder secondOrder constructSOError) axs''
+  mapM_ (prettyError . restrict ll linear (const True) constructLinError) axs''
+  mapM_ (prettyError . restrict pr isPattern (const True) constructPatError) axs''
   return (n, ss, fTyM, isEtaExpandedIESBelowRoot axs', containsFunctionalIEq (map fst axsWithTyp), map iEqToEq axs', map iEqToEq conjs') where
     iState = initialPosState file input
     toBundle pe = ParseErrorBundle { bundleErrors = pe :| [], bundlePosState = iState }
@@ -112,12 +114,13 @@ adjustToInputType DHPUnifProblem ie
       "right-hand side is not a deterministic higher-order pattern"
   | otherwise =  Right ie
 
--- |Checks whether an equation belongs to the second-order fragment
-restrictSO :: Bool -> IEquation -> Either (ParseError Text Void) IEquation
-restrictSO False ie = Right ie
-restrictSO True ie
-  | not . secondOrder . iTermToTerm . ilhs $ ie = Left $ constructSOError (iposl ie)
-  | not . secondOrder . iTermToTerm . irhs $ ie = Left $ constructSOError (iposr ie)
+-- |Checks whether an equation satisfies a specified restriction
+restrict :: Bool -> (Term -> Bool) -> (Term -> Bool) -> (Int -> ParseError Text Void) ->
+  IEquation -> Either (ParseError Text Void) IEquation
+restrict False _ _ _ ie = Right ie
+restrict True lRestr rRestr err ie
+  | not . lRestr . iTermToTerm . ilhs $ ie = Left $ err (iposl ie)
+  | not . rRestr . iTermToTerm . irhs $ ie = Left $ err (iposr ie)
   | otherwise = Right ie
 
 -- |Construct a input type error.
@@ -129,3 +132,13 @@ constructITError inputType i d = constructErrorGeneric i doc where
 -- error and points to the corresponding position in the input.
 constructSOError :: Int -> ParseError Text Void
 constructSOError i = constructErrorGeneric i "not a second-order term"
+
+-- |Helper function to construct "not linear" error which looks like a parse
+-- error and points to the corresponding position in the input.
+constructLinError :: Int -> ParseError Text Void
+constructLinError i = constructErrorGeneric i "not a linear term"
+
+-- |Helper function to construct "not pattern" error which looks like a parse
+-- error and points to the corresponding position in the input.
+constructPatError :: Int -> ParseError Text Void
+constructPatError i = constructErrorGeneric i "not a pattern"

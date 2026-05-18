@@ -41,11 +41,15 @@ spec_ncpo =
         t1 = mkTerm Var.x Typ.aa [ mkTerm DB.zero Typ.a [] ]
         s2 = mkTerm Fun.g Typ.a [ s1, mkTerm Var.y Typ.a [] ]
         t2 = mkTerm Fun.g Typ.a [ t1, mkTerm Var.z Typ.a [] ]
+        u1 x = mkTerm x Typ.aa [ mkTerm DB.zero Typ.a [] ]
+        u1' x y = mkTerm x Typ.a [ mkTerm y Typ.a [] ]
+        u2 x = mkTerm Fun.f Typ.a [ u1 x ]
     it "is not reflexive" $
       comp S.empty Compare s1 s1 `shouldBe` false
     it "computes an example correctly" $
       comp (S.singleton (Named . Id $ "z",Typ.a)) NoCompare s2 t2 `shouldBe` true
-
+    it "computes another example correctly" $
+      comp (S.singleton (Named . Id $ "z",Typ.a)) NoCompare (u2 Var.x) (u1' Var.x Var.z)  `shouldBe` true
 ncpoSpecs :: Spec
 ncpoSpecs = describe "Termination.NCPO.Ordering" $ do
   spec_ncpo

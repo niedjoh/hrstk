@@ -8,8 +8,9 @@ import Control.Monad.Trans.Maybe (MaybeT)
 import qualified Data.Map.Strict as M
 import Data.Maybe (isNothing)
 import qualified Data.Set as S
-import Prettyprinter (Doc,vsep,pretty,line,tupled)
+import Prettyprinter (Doc,pretty,line,tupled,(<+>))
 
+import Utils.Misc (fst4)
 import Utils.FreshMonad (MonadFresh,FreshM,freshVar)
 import Utils.Pretty (prettyNList)
 import Typ.Type (Typ)
@@ -21,7 +22,7 @@ import Subst.Match (match)
 import Subst.Unif (unif)
 import Equation.Type
 import Equation.Ops (termMap,dhpRuleVariants)
-import Equation.Rewriting (joinable,joinabilityDoc)
+import Equation.Rewriting (joinable,msJoinable)
 
 -- |Renames the free variables in the given rule (the variable condition is assumed) to fresh names
 -- and lifts them to the bound variable context specified in the first argument
@@ -111,18 +112,20 @@ criticalPairs es1 es2 = do
 
 -- |checks joinability of critical pairs (second argument) with respect to a DPRS (first argument)
 checkJoinability :: ES -> [CriticalPair] -> Bool
-checkJoinability dprs = all (joinable dprs . fst4) where
-  fst4 (x,_,_,_) = x
+checkJoinability dprs = all (joinable dprs . fst4)
 
--- |document describing the result of 'checkJoinability'
-resultDoc :: ES -> [CriticalPair] -> Doc ann
-resultDoc dprs cpairs = let
-  in line <> "input DPRS:" <> line <> line <> vsep (map pretty dprs) <> line <>
-  line <> "critical pairs:" <> line <>
+-- |checks multistep joinability of critical pairs (second argument) with respect to a DPRS (first argument)
+checkMSJoinability :: ES -> [CriticalPair] -> Bool
+checkMSJoinability dprs = all (msJoinable dprs . fst4)
+
+-- |document describing critical pair joinability results
+resultDocJoinable :: Doc ann -> (ES -> ES -> Doc ann) -> ES -> [CriticalPair] -> Doc ann
+resultDocJoinable desc docFun dprs cpairs = line <> line <> "critical pairs:" <> line <>
   if null cpairs
-    then "none" <> line <> line
+    then line <> "none"
     else line <>
          prettyNList
-         (map (\(e,p,r1,r2) -> tupled [pretty r1, pretty p, pretty r2] <> line <> line <> pretty e <> line) cpairs) <>
-         line <> line <> "naive joinability tests: " <> line <>
-         joinabilityDoc dprs (map (\(e,_,_,_) -> e) cpairs)
+         (map (\(e,p,r1,r2) -> tupled [pretty r1, pretty p, pretty r2] <> line <> line <> pretty e) cpairs) <>
+         line <> desc <+> line <>
+         docFun dprs (map (\(e,_,_,_) -> e) cpairs)
+  

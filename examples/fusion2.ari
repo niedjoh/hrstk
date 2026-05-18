@@ -1,0 +1,32 @@
+	; reverse fusion transformation rule
+; source: Higher-order matching for program transformation, de Moor & Sittampalam TCS 2001
+(format higher-order)
+
+(sort a)
+(sort la)
+
+(fun nil la)
+(fun cons (-> a la la))
+(fun app (-> la la la))
+(fun singleton (-> a la))
+(fun rev (-> la la))
+(fun fastrev (-> la la la))
+(fun foldr1 (-> (-> a la la) la la la))
+(fun foldr2 (-> (-> a (-> la la) la la) (-> la la) la la))
+(fun check (-> (-> a la la la) la la la))
+(fun check2 (-> (-> a la la la) la la la))
+
+(rule (app nil xs) xs)
+(rule (app (cons x xs) ys) (cons x (app xs ys)))
+(rule (app (app xs ys) zs) (app xs (app ys zs)))
+(rule (singleton x) (cons x nil))
+(rule rev (foldr1 (lambda ((x a) (xs la)) (app xs (singleton x))) nil))
+(rule (fastrev xs ys) (app (rev xs) ys))
+(rule (foldr1 G e xs) (check (lambda ((x a) (y la) (z la)) (app (G x y) z)) e xs))
+(rule (check (lambda ((x a) (y la) (z la)) (F x (lambda ((w la)) (app y w)) z)) e xs)
+      (foldr2 (lambda ((x a) (y (-> la la)) (z la)) (F x y z)) (lambda ((z la)) (app e z)) xs)
+)
+
+(conjecture (rev xs)
+            (foldr2 (lambda ((x a) (y (-> la la)) (z la)) (y (cons x z))) (lambda ((z la)) z) xs)
+)
