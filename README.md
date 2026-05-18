@@ -50,7 +50,8 @@ Run `cabal run hrstk-test` for unit/property tests.
 ## Input Requirements
 
 The input must be in beta-normal form. Equations are eta-expanded and pulled down to their return sort
-automatically after parsing and type checking/inference. Moreover, the following conditions are automatically
+automatically after parsing and type checking/inference. Info about the input system can be
+obtained by not giving any argument or using (`-m info`). The following conditions are automatically
 checked after reading the input file:
 
 ### Unification
