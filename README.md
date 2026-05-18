@@ -6,9 +6,15 @@ rewriting modulo beta/eta. The implementation keeps terms in beta-short eta-long
 at all times.
 
 The tool has modes for unification of deterministic higher-order patterns (DHPs)
-(`-m unif`), computing and checking naive joinability of 
-critical pairs (`-m cps`) of deterministic higher-order patttern rewrite systems (DPRSs),
-checking whether a conjectured equation is joinable by a given DPRS (`-m conj`)
+(`-m unif`), checking whether a conjectured equation is joinable by a given
+deterministic higher-order patttern rewrite systems (DPRS) (`-m conj`),
+various confluence methodsconfluence (`-m conf`) of DPRSs:
+
+* [orthogonality](https://jniederhauser.at/docs/dprs_ortho.pdf) of DPRSs (`-c ortho`)
+* [development closedness](https://doi.org/10.1016/S0304-3975(96)00173-9) of pattern rewrite systems (PRSs)
+* local confluence by joinability of [critical pairs](https://jniederhauser.at/docs/dprs_cp.pdf) for DPRSs (`-c lc`)
+* Knuth & Bendix' criterion (local confluence + termination) (`-c kb`)
+
 as well as various termination methods for HRSs (`-m term`):
 
 * the normalized computability path order [NCPO](https://jniederhauser.at/docs/wst2025.pdf) (`-t ncpo`)
@@ -17,6 +23,7 @@ as well as various termination methods for HRSs (`-m term`):
 
 The tool outputs `YES` if the problem of the respective mode could be solved.
 otherwise `MAYBE` is reported. For a human-checkable output, use the flag `-v`.
+If no specific confluence or termination method is given, a default strategy is used.
 
 Supported formats are the fragment of 
 [TPTP THF0](https://tptp.org/UserDocs/TPTPLanguage/TPTPLanguage.shtml) (`-i tptp`)
@@ -50,9 +57,11 @@ checked after reading the input file:
 
 An equation of DHPs which will not be pulled down to its return sort. Additional equations are ignored.
 
-### Critical Pairs
+### Confluence
 
-The input should be a DPRS.
+The input should be a DPRS. Left-linearity is demanded for orthogonality and
+development closedness. Furthermore, for development closedness, it is checked whether
+the input system is a PRS.
 
 ### Conjecture Joinability
 
