@@ -8,10 +8,10 @@ at all times.
 The tool has modes for unification of deterministic higher-order patterns (DHPs)
 (`-m unif`), checking whether a conjectured equation is joinable by a given
 deterministic higher-order patttern rewrite systems (DPRS) (`-m conj`),
-various confluence methodsconfluence (`-m conf`) of DPRSs:
+various confluence methods (`-m conf`) of DPRSs
 
 * [orthogonality](https://jniederhauser.at/docs/dprs_ortho.pdf) of DPRSs (`-c ortho`)
-* [development closedness](https://doi.org/10.1016/S0304-3975(96)00173-9) of pattern rewrite systems (PRSs)
+* [development closedness](https://doi.org/10.1016/S0304-3975(96)00173-9) of pattern rewrite systems (PRSs) (`-c dc`)
 * local confluence by joinability of [critical pairs](https://jniederhauser.at/docs/dprs_cp.pdf) for DPRSs (`-c lc`)
 * Knuth & Bendix' criterion (local confluence + termination) (`-c kb`)
 
