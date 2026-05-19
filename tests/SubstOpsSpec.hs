@@ -137,7 +137,26 @@ spec_apply =
                                           , mkTerm DB.zero Typ.a []
                                           ]
             )
-          ]
+         ]
+        u1 = mkTerm Fun.h Typ.a [ mkTerm Fun.f Typ.aa [ mkTerm DB.two Typ.a []
+                                                      , mkTerm DB.two Typ.aa []
+                                                      ]
+                                , mkTerm Fun.c Typ.a []
+                                ]
+        u2 a w = mkTerm Fun.f a [ mkTerm Fun.g Typ.a []
+                                , mkTerm w Typ.aaa [ u1 ]
+                                ]
+        t51 = u2 Typ.aa Var.y
+        t52 = mkTerm Var.x Typ.aa []
+        t5 = u2 Typ.aa Var.z
+        s5 = Subst . M.fromList $
+         [ ( x
+           , u2 Typ.a Var.z
+           )
+         , ( y
+           , mkTerm Var.z Typ.aa [ mkTerm DB.zero Typ.a [] ]
+           )
+         ]
     it "computes an example correctly" $
       apply s1 t1 `shouldBe` t1'
     it "shifts DBs of eta-expanded arguments" $
@@ -146,6 +165,10 @@ spec_apply =
       apply s3 t3 `shouldBe` t3'
     it "normalizes DBs correctly" $
       apply s4 t4 `shouldBe` t4'
+    it "shift example 1" $
+      apply s5 t51 `shouldBe` t5
+    it "shift example 2" $
+      apply s5 t52 `shouldBe` t5
       
 
 spec_compose :: Spec

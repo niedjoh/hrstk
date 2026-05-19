@@ -43,14 +43,14 @@ dbMap ts = M.fromDescList $ zip [k-1,k-2 .. 0] ts where
 applyDBMap :: Int -> Map Int Term -> Term -> Term
 applyDBMap j m s
       | DB i <- hd s, Just u <- m' M.!? i =
-         (applyDBMap (nlams u) (dbMap recRess) u{nlams = 0, typ = returnTyp (typ s)}){nlams = nlams s, typ = typ s}
+         (applyDBMap (nlams u) (dbMap recRess) u{nlams = 0, typ = returnTyp (typ u)}){nlams = nlams s, typ = typ s}
       | DB i <- hd s, i >= j' = s{hd = DB $ i - j, sp = recRess}
       | otherwise = s{sp = recRess}
       where
         k = nlams s
         j' = j+k
         m' = M.map (shiftDB k) $ M.mapKeysMonotonic (+ k) m
-        recRess = map (applyDBMap j' m') $ sp s
+        recRess = map (applyDBMap j m') $ sp s
 
 -- |The substitution function on terms.
 apply :: Subst -> Term -> Term
