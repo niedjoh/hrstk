@@ -176,13 +176,8 @@ confluence mcm n s v d bts fTyM dprs = case evalState (runMaybeT $ CP.criticalPa
       Nothing  -> confluenceStrategy [OR,DC,KB]
     in do
       res <- confFun s d bts fTyM dprs cpairs
-      if confluenceStatus res
-        then do
-          putStrLn "YES"
-          when v . printES "input DPRS:" $ dprs
-        else do
-          putStrLn "MAYBE"
-          when v . printES "input DPRS:" $ dprs
+      putStrLn . show . confluenceStatus $ res
+      when v . printES "input DPRS:" $ dprs
       when v . putDoc $ confluenceResultDoc res
           
 conjectureJoinability :: Bool -> ES -> ES -> IO ()

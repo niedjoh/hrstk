@@ -1,0 +1,30 @@
+; fibonacci transformation rule
+; source: Generic Program Transformation, de Moor & Sittampalam, Advanced Functional Programming Summer School 1998
+(format higher-order)
+
+(sort nat)
+(sort natPair)
+
+(fun 0 nat)
+(fun s (-> nat nat))
+(fun plus (-> nat nat nat))
+(fun fib (-> nat nat))
+(fun pair (-> nat nat natPair))
+(fun uncurry (-> (-> nat nat natPair) natPair natPair))
+(fun foldn (-> (-> nat nat) nat nat nat))
+(fun foldn2 (-> (-> natPair natPair) natPair nat natPair))
+(fun split (-> (-> nat nat) (-> nat nat) nat natPair))
+(fun fastfib (-> nat natPair))
+(fun check (-> (-> nat natPair) natPair nat natPair))
+
+(rule (fib 0) 0)
+(rule (fib (s 0)) (s 0))
+(rule (fib (s (s x))) (plus (fib (s x)) (fib x)))
+(rule (split F G x) (pair (F x) (G x)))
+(rule (fastfib x) (split fib (lambda ((y nat)) (fib (s y))) (foldn s 0 x)))
+(rule (split F G (foldn S z x)) (check (lambda ((y nat)) (split F G (S y))) (split F G z) x))
+(rule (check (lambda ((y nat)) (H (fib y) (fib (s y)))) c x) (foldn2 (uncurry H) c x))
+
+(conjecture (fastfib x)
+            (foldn2 (lambda ((y natPair)) (uncurry (lambda ((z1 nat) (z2 nat)) (pair z2 (plus z2 z1))) y)) (pair 0 (s 0)) x)
+)

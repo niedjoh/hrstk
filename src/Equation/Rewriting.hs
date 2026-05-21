@@ -4,6 +4,7 @@
 module Equation.Rewriting where
 
 import Data.List (intersect)
+import Data.List.Extra (nubOrdOn)
 import Data.List.NonEmpty (NonEmpty,(<|),singleton)
 import qualified Data.List.NonEmpty as NEL
 import Prettyprinter (Doc,vsep,hcat,pretty,line,align,(<+>))
@@ -79,7 +80,7 @@ msJoinable es e = rhs e `elem` possibleMultiSteps es (lhs e)
 joinabilityDoc :: ES -> ES -> Doc ann
 joinabilityDoc es1 es2 = (vsep . map jd $ zip es2 [1 :: Int ..]) where
   jd (e,i) = let
-    (lseqs,rseqs) = (rewriteSequencesToNF es1 (lhs e), rewriteSequencesToNF es1 (rhs e))
+    (lseqs,rseqs) = (nubOrdOn NEL.last $ rewriteSequencesToNF es1 (lhs e), nubOrdOn NEL.last $ rewriteSequencesToNF es1 (rhs e))
     in line <> "#" <> pretty i <+>
        align (pretty e <> line <> line <>
              case [(ls,rs) | ls <- lseqs, rs <- rseqs, NEL.last ls == NEL.last rs] of
