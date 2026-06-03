@@ -1,0 +1,9 @@
+; @cops 435
+; [85] p. 50
+(format HRS)
+(sort nat)
+(fun h (-> nat nat))
+(fun 0 nat)
+(fun g (-> (-> (-> nat nat) nat nat) nat))
+(rule (h 0) (g (lambda ((x (-> nat nat)) (y nat)) (x (h y)))))
+(rule (g (lambda ((x (-> nat nat)) (y nat)) (Z (lambda ((z nat)) (x z)) y))) (Z (lambda ((z nat)) 0) 0))

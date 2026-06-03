@@ -1,0 +1,14 @@
+; @cops 434
+; http://www.cs.vu.nl/~femke/ps/examples.ps p. 13
+(format HRS)
+(sort nat)
+(sort natlist)
+(fun nil natlist)
+(fun cons (-> nat natlist natlist))
+(fun plus (-> nat nat nat))
+(fun foldl (-> (-> nat nat nat) nat natlist nat))
+(fun sum (-> natlist nat))
+(fun 0 nat)
+(rule (foldl (lambda ((x nat) (y nat)) (F x y)) n nil) n)
+(rule (foldl (lambda ((x nat) (y nat)) (F x y)) n (cons h t)) (foldl (lambda ((x nat) (y nat)) (F x y)) (F n h) t))
+(rule (sum l) (foldl (lambda ((x nat) (y nat)) (plus x y)) 0 l))

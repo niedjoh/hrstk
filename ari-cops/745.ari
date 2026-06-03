@@ -1,0 +1,12 @@
+; @author Makoto Hamana
+; @cops 745
+(format HRS)
+(sort a)
+(sort b)
+(sort v)
+(fun c (-> v a))
+(fun d (-> v a))
+(fun f (-> (-> v b) b))
+(fun 0 b)
+(rule (f (lambda ((x v)) (M (c x)))) 0)
+(rule (f (lambda ((x v)) (M (d x)))) 0)

@@ -1,0 +1,23 @@
+; @author Julian Nagele
+; @doi 10.1007/978-3-319-08918-8_24
+; @cops 728
+; [128] Definition 4
+(format HRS)
+(sort term)
+(sort stream)
+(fun abs (-> (-> term term) term))
+(fun tapp (-> term term term))
+(fun mu (-> (-> stream term) term))
+(fun sapp (-> term stream term))
+(fun car (-> stream term))
+(fun cons (-> term stream stream))
+(fun cdr (-> stream stream))
+(rule (tapp (mu (lambda ((a stream)) (s a))) u) (mu (lambda ((a stream)) (s (cons u a)))))
+(rule (sapp (mu (lambda ((a stream)) (s a))) S) (s S))
+(rule (abs (lambda ((x term)) (t x))) (mu (lambda ((a stream)) (sapp (t (car a)) (cdr a)))))
+(rule (sapp u (cons u' S)) (sapp (tapp u u') S))
+(rule (car (cons u S)) u)
+(rule (cdr (cons u S)) S)
+(rule (mu (lambda ((a stream)) (sapp u a))) u)
+(rule (cons (car S) (cdr S)) S)
+(rule (sapp (tapp u (car S)) (cdr S)) (sapp u S))

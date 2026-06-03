@@ -1,0 +1,10 @@
+; @doi 10.1007/3-540-61254-8_22
+; @cops 767
+; [139] Theorem 4
+(format HRS)
+(sort term)
+(fun F (-> term term term))
+(fun D term)
+(fun G (-> term term))
+(rule (G (y (F t u))) (F t u))
+(rule (F x x) D)

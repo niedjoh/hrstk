@@ -1,0 +1,13 @@
+; @cops 516
+; [127] p. 206 with rule for function composition
+(format HRS)
+(sort a)
+(sort alist)
+(fun nil alist)
+(fun cons (-> a alist alist))
+(fun map (-> (-> a a) alist alist))
+(fun o (-> (-> a a) (-> a a) a a))
+(rule (map (lambda ((x a)) (f x)) nil) nil)
+(rule (map (lambda ((x a)) (f x)) (cons x xs)) (cons (f x) (map (lambda ((x a)) (f x)) xs)))
+(rule (map (lambda ((x a)) (f x)) (map (lambda ((x a)) (g x)) xs)) (map (lambda ((z a)) (o (lambda ((x a)) (f x)) (lambda ((x a)) (g x)) z)) xs))
+(rule (o (lambda ((x a)) (f x)) (lambda ((x a)) (g x)) y) (f (g y)))

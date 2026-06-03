@@ -1,0 +1,11 @@
+; @author Julian Nagele
+; @doi 10.1007/3-540-62950-5_80
+; @cops 473
+; [106] Example 5
+(format HRS)
+(sort o)
+(fun f (-> (-> o o) o))
+(fun g (-> (-> (-> o o) o) o))
+(fun dots o)
+(rule (g (lambda ((y (-> o o))) (X (lambda ((x o)) (y x))))) (X (lambda ((z o)) (X (lambda ((x o)) z)))))
+(rule (f (lambda ((x o)) (Y x))) dots)

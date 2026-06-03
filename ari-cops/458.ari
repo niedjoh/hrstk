@@ -1,0 +1,13 @@
+; @author Julian Nagele
+; @doi 10.1016/S0304-3975(96)00173-9
+; @cops 458
+; [93] Example 25
+(format HRS)
+(sort o)
+(fun app (-> o o o))
+(fun abs (-> (-> o o) o))
+(fun bot o)
+(rule (app (abs (lambda ((x o)) (z x))) y) (z y))
+(rule (abs (lambda ((x o)) (app y x))) y)
+(rule (app bot x) bot)
+(rule (abs (lambda ((x o)) bot)) bot)

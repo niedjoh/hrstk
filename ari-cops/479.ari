@@ -1,0 +1,11 @@
+; @author Julian Nagele
+; @doi 10.1093/ietisy/e88-d.3.583
+; @cops 479
+; [99] Example 6
+(format HRS)
+(sort o)
+(fun apply (-> (-> o o) o o))
+(fun a o)
+(fun b o)
+(rule (apply (lambda ((x o)) (F x)) X) (F X))
+(rule a b)

@@ -1,0 +1,17 @@
+; @author Makoto Hamana
+; @cops 1037
+; correction of COPS #756
+(format HRS)
+(sort nat)
+(sort var)
+(fun 0 nat)
+(fun s (-> nat nat))
+(fun xplus (-> nat nat nat))
+(fun xtimes (-> nat nat nat))
+(fun rec (-> nat nat (-> nat nat nat) nat))
+(fun v (-> var nat))
+(rule (xplus x 0) x)
+(rule (xplus x (s y)) (s (xplus x y)))
+(rule (rec 0 U (lambda ((z1 nat) (z2 nat)) (F z1 z2))) U)
+(rule (rec (s (v n)) U (lambda ((z1 nat) (z2 nat)) (F z1 z2))) (F (v n) (rec (v n) U (lambda ((z1 nat) (z2 nat)) (F z1 z2)))))
+(rule (xtimes x y) (rec y 0 (lambda ((z1 nat) (z2 nat)) (xplus x z2))))

@@ -1,0 +1,7 @@
+; @cops 426
+(format HRS)
+(sort term)
+(fun abs (-> (-> term term) term))
+(fun app (-> term term term))
+(rule (app (abs (lambda ((x term)) (F x))) S) (F S))
+(rule (abs (lambda ((x term)) (app S X))) S)

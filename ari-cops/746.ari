@@ -1,0 +1,12 @@
+; @author Makoto Hamana
+; @cops 746
+; simply-typed lambda calculus in the style of [137,138]
+(format HRS)
+(sort a)
+(sort b)
+(sort arrab)
+(sort Va)
+(fun app (-> arrab a b))
+(fun lam (-> (-> Va b) arrab))
+(fun var(-> Va a))
+(rule (app (lam (lambda ((x Va)) (M (var x)))) N) (M N))

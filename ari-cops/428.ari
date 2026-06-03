@@ -1,0 +1,10 @@
+; @cops 428
+; [82] p. 6
+(format HRS)
+(sort nat)
+(fun 0 nat)
+(fun s (-> nat nat))
+(fun sum (-> nat (-> nat nat) nat))
+(fun a (-> nat nat nat))
+(rule (sum 0 (lambda ((i nat)) (F i))) (F 0))
+(rule (sum (s n) (lambda ((i nat)) (F i))) (F (s n)))

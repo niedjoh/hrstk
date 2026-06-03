@@ -1,0 +1,20 @@
+; @author Julian Nagele
+; @cops 477
+; [98] Example 20
+(format HRS)
+(sort int)
+(sort list)
+(fun altmap (-> (-> int int) list list))
+(fun pls (-> int int int))
+(fun mlt (-> int int int))
+(fun nil list)
+(fun cons (-> int list list))
+(fun + (-> int int int))
+(fun * (-> int int int))
+(fun 2 int)
+(rule (altmap (lambda ((z int)) (pls z Y)) (cons X XS)) (cons (pls X Y) (altmap (lambda ((z int)) (mlt z Y)) XS)))
+(rule (altmap (lambda ((z int)) (mlt z Y)) (cons X XS)) (cons (mlt X Y) (altmap (lambda ((z int)) (pls z Y)) XS)))
+(rule (altmap (lambda ((z int)) (F z)) nil) nil)
+(rule (pls X Y) (+ X Y))
+(rule (mlt X Y) (* X Y))
+(rule (pls 2 2) (mlt 2 2))

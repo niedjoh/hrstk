@@ -1,0 +1,14 @@
+; @author Julian Nagele
+; @cops 468
+; addition on natural numbers via recursor and directly
+(format HRS)
+(sort nat)
+(fun 0 nat)
+(fun s (-> nat nat))
+(fun rec (-> (-> nat nat nat) nat nat nat))
+(fun add (-> nat nat nat))
+(rule (rec (lambda ((x nat) (y nat)) (F x y)) a 0) a)
+(rule (rec (lambda ((x nat) (y nat)) (F x y)) a (s n)) (F n (rec (lambda ((x nat) (y nat)) (F x y)) a n)))
+(rule (add a n) (rec (lambda ((x nat) (y nat)) (s y)) a n))
+(rule (add a 0) a)
+(rule (add a (s n)) (s (add a n)))

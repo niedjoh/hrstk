@@ -1,0 +1,8 @@
+; @author Julian Nagele
+; @cops 475
+; [98] Example 14
+(format HRS)
+(sort a)
+(fun f (-> (-> a a) a))
+(fun d a)
+(rule (f (lambda ((x a)) (F x))) (F (f (lambda ((x a)) d))))

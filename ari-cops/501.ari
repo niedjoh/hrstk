@@ -1,0 +1,10 @@
+; @cops 501
+; variation of rules in [136]
+(format HRS)
+(sort term)
+(fun abs (-> (-> term term) term))
+(fun app (-> term term term))
+(rule (app (abs (lambda ((x term)) x)) S) S)
+(rule (app (abs (lambda ((x term)) T)) S) T)
+(rule (app (abs (lambda ((x term)) (app (F x) (G x)))) S) (app (app (abs (lambda ((x term)) (F x))) S) (app (abs (lambda ((x term)) (G x))) S)))
+(rule (app (abs (lambda ((x term)) (abs (lambda ((y term)) (H x y))))) S) (abs (lambda ((y term)) (app (abs (lambda ((x term)) (H x y))) S))))

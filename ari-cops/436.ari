@@ -1,0 +1,14 @@
+; @cops 436
+; [107] Definition 2.5 without garbage collection rule
+(format HRS)
+(sort term)
+(fun abs (-> (-> term term) term))
+(fun app (-> term term term))
+(fun sub (-> (-> term term) term term))
+(rule (app (abs (lambda ((y term)) (X y))) Y) (sub (lambda ((y term)) (X y)) Y))
+(rule (sub (lambda ((y term)) X0) Y) X0)
+(rule (sub (lambda ((y term)) y) Y) Y)
+(rule (sub (lambda ((y term)) (abs (lambda ((x term)) (X2 x y)))) Y) (abs (lambda ((x term)) (sub (lambda ((y term)) (X2 x y)) Y))))
+(rule (sub (lambda ((y term)) (app (X y) (X' y))) Y) (app (sub (lambda ((y term)) (X y)) Y) (sub (lambda ((y term)) (X' y)) Y)))
+
+

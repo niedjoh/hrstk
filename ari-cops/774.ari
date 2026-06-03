@@ -1,0 +1,17 @@
+; @author Makoto Hamana
+; @doi 10.1017/S096012951600027X
+; @cops 774
+; [143] subsystem of Figure 11; part of Cops #776
+(format HRS)
+(sort G)
+(sort Ar<G_G>)
+(fun 0 G)
+(fun union (-> G G G))
+(fun lam (-> (-> G G) Ar<G_G>))
+(fun app (-> Ar<G_G> G G))
+(rule (app (lam (lambda ((x G)) (M x))) N) (M N))
+(rule (lam (lambda ((x G)) (app L x))) L)
+(rule (union x 0) x)
+(rule (union 0 y) y)
+(rule (union (union x y) z) (union x (union y z)))
+(rule (union x y) (union y x))

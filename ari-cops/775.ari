@@ -1,0 +1,9 @@
+; @author Makoto Hamana
+; @doi 10.1145/2429069.2429091
+; @cops 775
+; [144] p. 179
+(format HRS)
+(sort expr)
+(sort val)
+(fun let_val (-> expr (-> val expr) expr))
+(rule (let_val T (lambda ((x val)) (let_val U (lambda ((y val)) (V x y))))) (let_val U (lambda ((y val)) (let_val T (lambda ((x val)) (V x y))))))

@@ -1,0 +1,9 @@
+; @author Kentaro Kikuchi
+; @doi 10.29007/7q54
+; @cops 772
+; [141] Example 5
+(format HRS)
+(sort term)
+(sort form)
+(fun forall (-> (-> term form) form))
+(rule (forall (lambda ((x term)) (forall (lambda ((y term)) (F x y))))) (forall (lambda ((y term)) (forall (lambda ((x term)) (F x y))))))

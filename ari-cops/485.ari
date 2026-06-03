@@ -1,0 +1,15 @@
+; @author Julian Nagele
+; @doi 10.1007/978-3-642-24364-6_11
+; @cops 485
+; [100] p. 157
+(format HRS)
+(sort o)
+(fun f (-> o o o))
+(fun g (-> o o o))
+(fun a o)
+(fun b o)
+(fun h (-> (-> o o) o))
+(rule (f x b) (g x x))
+(rule (g x a) (f x x))
+(rule (h (lambda ((x o)) (F x))) (F a))
+(rule (h (lambda ((x o)) (F x))) (F b))

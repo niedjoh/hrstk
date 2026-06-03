@@ -1,0 +1,13 @@
+; @author Vincent van Oostrom
+; @doi 10.1007/978-3-642-54830-7_7
+; @cops 759
+; [135] Definition 1
+(format HRS)
+(sort value)
+(sort term)
+(fun abs (-> (-> value term) value))
+(fun emb (-> value term))
+(fun app (-> term term term))
+(rule (app (emb (abs (lambda ((x value)) (M x)))) (emb V)) (M V))
+(rule (app (app (emb (abs (lambda ((x value)) (M x)))) N) L) (app (emb (abs (lambda ((x value)) ( app (M x) L)))) N))
+(rule (app (emb V) (app (emb (abs (lambda ((x value)) (M x)))) N)) (app (emb (abs (lambda ((x value)) (app (emb V) (M x))))) N))

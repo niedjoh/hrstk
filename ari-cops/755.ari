@@ -1,0 +1,15 @@
+; @author Makoto Hamana
+; @cops 755
+(format HRS)
+(sort N)
+(sort VN)
+(fun o N)
+(fun s (-> N N))
+(fun fun (-> (-> VN N) N N N))
+(fun dom (-> N N N N))
+(fun eval (-> N N N))
+(rule (eval (fun (lambda ((x VN)) (F (v x))) X Y) Z) (F (dom X Y Z)))
+(rule (dom (s X) (s Y) (s Z)) (s (dom X Y Z)))
+(rule (dom o (s Y) (s Z)) (s (dom o Y Z)))
+(rule (dom X Y o) X)
+(rule (dom o o Z) o)

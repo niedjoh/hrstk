@@ -1,0 +1,9 @@
+; @author Makoto Hamana
+; @doi 10.1109/LICS.2013.58
+; @cops 782
+; [147] Section V.B.
+(format HRS)
+(sort I)
+(fun nu (-> (-> I I) I))
+(rule (nu (lambda ((a I)) X1)) X1)
+(rule (nu (lambda ((a I)) (nu (lambda ((b I)) (X4 a b))))) (nu (lambda ((a I)) (nu (lambda ((b I)) (X4 b a))))))

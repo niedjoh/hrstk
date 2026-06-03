@@ -1,0 +1,10 @@
+; @cops 431
+; http://www.cs.vu.nl/~femke/ps/examples.ps p. 3
+(format HRS)
+(sort nat)
+(sort A)
+(fun 0 nat)
+(fun s (-> nat nat))
+(fun rec (-> (-> nat A A) A nat A))
+(rule (rec (lambda ((x nat) (y A)) (F x y)) a 0) a)
+(rule (rec (lambda ((x nat) (y A)) (F x y)) a (s n)) (F n (rec (lambda ((x nat) (y A)) (F x y)) a n)))

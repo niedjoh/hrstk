@@ -1,0 +1,20 @@
+; @author Makoto Hamana
+; @doi 10.1007/3-540-58233-9_14
+; @cops 753
+; [134] Section 6.3 (variant)
+(format HRS)
+(sort A)
+(sort B)
+(sort C)
+(sort SAB)
+(fun case (-> SAB (-> A C) (-> B C) C))
+(fun inl (-> A SAB))
+(fun inr (-> B SAB))
+(fun f A)
+(fun a A)
+(fun b A)
+(rule (case (inl X) (lambda ((x A)) (F x)) (lambda ((y B)) (G y))) (F X))
+(rule (case (inr Y) (lambda ((x A)) (F x)) (lambda ((x B)) (G x))) (G Y))
+(rule (case Z (lambda ((x A)) (H (inl x))) (lambda ((y B)) (H (inr y)))) (H Z))
+(rule f a)
+(rule f b)

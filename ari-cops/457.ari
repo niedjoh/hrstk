@@ -1,0 +1,14 @@
+; @author Julian Nagele
+; @doi 10.1007/3-540-61254-8_26
+; @cops 457
+; [104] Example 3.1
+(format HRS)
+(sort o)
+(fun app (-> o o o))
+(fun abs (-> (-> o o) o))
+(fun or (-> o o o))
+(fun tt o)
+(rule (app (abs (lambda ((x o)) (y x))) z) (y z))
+(rule (abs (lambda ((x o)) (app z x))) z)
+(rule (or tt x) tt)
+(rule (or x tt) tt)

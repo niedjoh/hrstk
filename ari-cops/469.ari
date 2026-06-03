@@ -1,0 +1,14 @@
+; @author Julian Nagele
+; @doi 10.1109/LICS.1991.151658
+; @cops 469
+; [88] p. 348
+(format HRS)
+(sort term)
+(sort form)
+(fun all (-> (-> term form) form))
+(fun and (-> form form form))
+(fun or (-> form form form))
+(rule (all (lambda ((x term)) P)) P)
+(rule (all (lambda ((x term)) (and (P' x) (Q' x)))) (and (all (lambda ((x term)) (P' x))) (all (lambda ((x term)) (Q' x)))))
+(rule (all (lambda ((x term)) (or (P' x) Q))) (or (all (lambda ((x term)) (P' x))) Q))
+(rule (all (lambda ((x term)) (or P (Q' x)))) (or P (all (lambda ((x term)) (Q' x)))))

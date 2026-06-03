@@ -1,0 +1,17 @@
+; @author Kentaro Kikuchi
+; @cops 785
+; [149] Definition 7.4.7 without types
+(format HRS)
+(sort var)
+(sort term)
+(fun abs (-> (-> var term) term))
+(fun let (-> var term (-> var term) term))
+(fun sub (-> (-> var term) term term))
+(fun var (-> var term))
+(rule (sub (lambda ((x var)) (var x)) N) N)
+(rule (sub (lambda ((x var)) (var Y)) N) (var Y))
+(rule (sub (lambda ((x var)) (abs (lambda ((z var)) (M (var z) (var x))))) N) (abs (lambda ((z var)) (sub (lambda ((x var)) (M (var z) (var x))) N))))
+(rule (sub (lambda ((x var)) (let Y (L (var x)) (lambda ((z var)) (M (var z) (var x))))) N) (let Y (sub (lambda ((x var)) (L (var x))) N) (lambda ((z var)) (sub (lambda ((x var)) (M (var z) (var x))) N))))
+(rule (sub (lambda ((x var)) (let x (L (var x)) (lambda ((z var)) (M (var z) (var x))))) (var Y)) (let Y (sub (lambda ((x var)) (L (var x))) (var Y)) (lambda ((z var)) (sub (lambda ((x var)) (M (var z) (var x))) (var Y)))))
+(rule (sub (lambda ((x var)) (let x (L (var x)) (lambda ((z var)) (M (var z) (var x))))) (let Y J (lambda ((u var)) (K (var u))))) (let Y J (lambda ((u var)) (sub (lambda ((x var)) (let x (L (var x)) (lambda ((z var)) (M (var z) (var x))))) (K (var u))))))
+(rule (sub (lambda ((x var)) (let x (L (var x)) (lambda ((z var)) (M (var z) (var x))))) (abs (lambda ((y var)) (K (var y))))) (sub (lambda ((z var)) (sub (lambda ((x var)) (M (var z) (var x))) (abs (lambda ((y var)) (K (var y)))))) (sub (lambda ((y var)) (K (var y))) (sub (lambda ((x var)) (L (var x))) (abs (lambda ((y var)) (K (var y))))))))

@@ -1,0 +1,12 @@
+; @author Julian Nagele
+; @cops 449
+; [84] Example 11.6.11(ii)
+(format HRS)
+(sort o)
+(fun f (-> o o))
+(fun g (-> o o))
+(fun h (-> o o))
+(fun h' (-> (-> o o) o))
+(fun a o)
+(rule (f z) z)
+(rule (h' (lambda ((x o)) (h (f (g x))))) a)

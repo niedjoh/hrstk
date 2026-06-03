@@ -1,0 +1,22 @@
+; @author Makoto Hamana
+; @cops 771
+; full experiments for [35], adaptation
+(format HRS)
+(sort nat)
+(fun + (-> nat nat nat))
+(fun 0 nat)
+(fun s (-> nat nat))
+(fun * (-> nat nat nat))
+(fun app (-> (-> nat nat) nat nat))
+(rule (app (lambda ((x nat)) (M x)) N) (M N))
+(rule (+ x 0) x)
+(rule (+ x (s y)) (s (+ x y)))
+(rule (+ 0 y) y)
+(rule (+ (s x) y) (s (+ x y)))
+(rule (* x 0) 0)
+(rule (* x (s y)) (+ (* x y) x))
+(rule (* 0 y) 0)
+(rule (* (s x) y) (+ (* x y) y))
+(rule (+ (+ x y) z) (+ x (+ y z)))
+(rule (+ x y) (+ y x))
+(rule (* x y) (* y x))

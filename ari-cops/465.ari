@@ -1,0 +1,12 @@
+; @doi 10.1016/0304-3975(94)90012-4
+; @doi 10.1007/978-3-319-63046-5_24
+; @cops 465
+; [87] Definition 3.1 with untyped lambda-calculus
+; [118] Example 17
+(format HRS)
+(sort term)
+(fun abs (-> (-> term term) term))
+(fun app (-> term term term))
+(rule (app (abs (lambda ((x term)) (T x))) S) (T S))
+(rule (app (abs (lambda ((y term)) (abs (lambda ((x term)) (M y x))))) S) (abs (lambda ((x term)) (app (abs (lambda ((y term)) (M y x))) S))))
+(rule (app (app (abs (lambda ((x term)) (T x))) S) U) (app (abs (lambda ((x term)) (app (T x) U))) S))

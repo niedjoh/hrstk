@@ -1,0 +1,7 @@
+; @author Julian Nagele
+; @cops 444
+; [84] p. 602
+(format HRS)
+(sort o)
+(fun mu (-> (-> o o) o))
+(rule (mu (lambda ((x o)) (z x))) (z (mu (lambda ((x o)) (z x)))))

@@ -1,0 +1,14 @@
+; @author Julian Nagele
+; @doi 10.4230/LIPIcs.RTA.2010.17
+; @cops 462
+; [86] Example 4.2
+(format HRS)
+(sort o)
+(fun f (-> o o o))
+(fun s (-> o o))
+(fun a o)
+(fun b o)
+(fun mu (-> (-> o o) o))
+(rule (f x x) a)
+(rule (f x (s x)) b)
+(rule (mu (lambda ((x o)) (Z x))) (Z (mu (lambda ((x o)) (Z x)))))

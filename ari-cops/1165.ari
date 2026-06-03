@@ -1,0 +1,14 @@
+; @author Aart Middeldorp
+; @cops 1165
+; [14] p. 195; the question about CR was raised by Colin Mann, according to [155]
+(format HRS)
+(sort term)
+(fun abs (-> (-> term term) term))
+(fun app (-> term term term))
+(fun D term)
+(fun D0 term)
+(fun D1 term)
+(rule (app (abs (lambda ((x term)) (F x))) S) (F S))
+(rule (app D0 (app (app D z0) z1)) z0)
+(rule (app D1 (app (app D z0) z1)) z1)
+(rule (app (app D (app D0 z)) (app D1 z)) z)

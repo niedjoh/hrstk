@@ -1,0 +1,6 @@
+; @cops 742
+(format HRS)
+(sort o)
+(fun f (-> o o))
+(fun a o)
+(rule (f (F a)) a)

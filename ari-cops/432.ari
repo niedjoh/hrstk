@@ -1,0 +1,13 @@
+; @cops 432
+; http://www.cs.vu.nl/~femke/ps/examples.ps p. 3
+(format HRS)
+(sort T)
+(fun abs (-> (-> T T) T))
+(fun app (-> T T T))
+(fun p1 (-> T T))
+(fun p2 (-> T T))
+(fun pair (-> T T T))
+(rule (app (abs (lambda ((x T)) (Z x))) Y) (Z Y))
+(rule (p1 (pair x1 x2)) x1)
+(rule (p2 (pair x1 x2)) x2)
+(rule (pair (p1 x) (p2 x)) x)

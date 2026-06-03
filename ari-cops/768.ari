@@ -1,0 +1,19 @@
+; @author Makoto Hamana
+; @doi 10.1305/ndjfl/1093883461
+; @cops 768
+; [140] p. 265
+(format HRS)
+(sort a)
+(sort b)
+(sort Ar<a_b>)
+(sort Pr<a_b>)
+(fun app (-> Ar<a_b> a b))
+(fun lam (-> (-> a b) Ar<a_b>))
+(fun pi1 (-> Pr<a_b> a))
+(fun pi2 (-> Pr<a_b> b))
+(fun pair (-> a b Pr<a_b>))
+(rule (app (lam (lambda ((x a)) (M x))) N) (M N))
+(rule (lam (lambda ((x a)) (app L x))) L)
+(rule (pi1 (pair S T)) S)
+(rule (pi2 (pair S T)) T)
+(rule (pair (pi1 U) (pi2 U)) U)

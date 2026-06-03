@@ -1,0 +1,20 @@
+; @author Makoto Hamana
+; @doi 10.1007/3-540-58233-9_14
+; @cops 758
+; [134] Section 6.1
+(format HRS)
+(sort data)
+(sort proc)
+(fun xplus (-> proc proc proc))
+(fun xtimes (-> proc proc proc))
+(fun delta proc)
+(fun sigma (-> (-> data proc) proc))
+(rule (xplus X X) X)
+(rule (xtimes (xplus X Y) Z) (xplus (xtimes X Z) (xtimes Y Z)))
+(rule (xtimes (xtimes X Y) Z) (xtimes X (xtimes Y Z)))
+(rule (xplus X delta) X)
+(rule (xtimes delta X) delta)
+(rule (sigma (lambda ((d data)) X)) X)
+(rule (xplus (sigma (lambda ((d data)) (P d))) (P E)) (sigma (lambda ((d data)) (P d))))
+(rule (sigma (lambda ((d data)) (xplus (P d) (Q d)))) (xplus (sigma (lambda ((d data)) (P d))) (sigma (lambda ((d data)) (Q d)))))
+(rule (xtimes (sigma (lambda ((d data)) (P d))) X) (sigma (lambda ((d data)) (xtimes (P d) X))))

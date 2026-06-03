@@ -1,0 +1,14 @@
+; @author Makoto Hamana
+; @cops 769
+; [82] Section 5.1.2.2
+(format HRS)
+(sort A)
+(sort B)
+(sort U)
+(sort i)
+(fun case (-> U (-> A i) (-> B i) i))
+(fun inl (-> A U))
+(fun inr (-> B U))
+(rule (case (inl X) (lambda ((x A)) (F x)) (lambda ((y B)) (G y))) (F X))
+(rule (case (inr Y) (lambda ((x A)) (F x)) (lambda ((x B)) (G x))) (G Y))
+(rule (case Z (lambda ((x A)) (H (inl x))) (lambda ((y B)) (H (inr y)))) (H Z))

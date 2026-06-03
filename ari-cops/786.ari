@@ -1,0 +1,19 @@
+; @author Makoto Hamana
+; @cops 786
+; [145] subsystem of Definition 2.4; part of Cops #780
+(format HRS)
+(sort a)
+(sort b)
+(sort c)
+(sort Ar<a_b>)
+(sort Sum<a_b>)
+(fun app (-> Ar<a_b> a b))
+(fun lam (-> (-> a b) Ar<a_b>))
+(fun case (-> Sum<a_b> (-> a c) (-> b c) c))
+(fun inl (-> a Sum<a_b>))
+(fun inr (-> b Sum<a_b>))
+(rule (app (lam (lambda ((x a)) (M x))) N) (M N))
+(rule (lam (lambda ((x a)) (app M1 x))) M1)
+(rule (case (inl X) (lambda ((x a)) (F x)) (lambda ((y b)) (G y))) (F X))
+(rule (case (inr Y) (lambda ((x a)) (F x)) (lambda ((y b)) (G y))) (G Y))
+(rule (case Z (lambda ((x a)) (H (inl x))) (lambda ((y b)) (H (inr x)))) (H Z))

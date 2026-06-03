@@ -1,0 +1,8 @@
+; @doi 10.1016/S0304-3975(97)00143-6
+; @cops 766
+; [94] p. 8
+(format HRS)
+(sort o)
+(fun f (-> o o))
+(fun g (-> o o))
+(rule (f (F X)) (g X))

@@ -1,0 +1,19 @@
+; @author Julian Nagele
+; @doi 10.1007/978-3-642-24364-6_11
+; @cops 486
+; [100] Example 13
+(format HRS)
+(sort nat)
+(fun 0 nat)
+(fun s (-> nat nat))
+(fun avg (-> nat nat nat))
+(fun check (-> nat nat))
+(fun fun (-> (-> nat nat) nat))
+(fun apply (-> nat nat nat))
+(rule (avg (s x) y) (avg x (s y)))
+(rule (avg x (s (s (s y)))) (s (avg (s x) y)))
+(rule (avg 0 0) 0)
+(rule (avg 0 (s 0)) 0)
+(rule (avg 0 (s (s 0))) (s 0))
+(rule (apply (fun (lambda ((x nat)) (F x))) y) (F (check y)))
+(rule (check 0) 0)

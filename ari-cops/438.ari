@@ -1,0 +1,7 @@
+; @doi 10.1007/978-3-540-70590-1_21
+; @cops 437
+; [108] p. 318 last rule
+(format HRS)
+(sort term)
+(fun sub (-> (-> term term) term term))
+(rule (sub (lambda ((x term)) (sub (lambda ((y term)) (X2 y x)) (X x))) X0) (sub (lambda ((y term)) (sub (lambda ((x term)) (X2 y x)) X0)) (sub (lambda ((x term)) (X x)) X0)))

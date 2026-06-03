@@ -1,0 +1,15 @@
+; @author Julian Nagele
+; @cops 726
+; [85] p. 153
+(format HRS)
+(sort nat)
+(fun 0 nat)
+(fun s (-> nat nat))
+(fun dom (-> nat nat nat nat))
+(fun fun (-> (-> nat nat) nat nat nat))
+(fun eval (-> nat nat nat))
+(rule (dom (s X) (s Y) (s Z)) (s (dom X Y Z)))
+(rule (dom 0 (s Y) (s Z)) (s (dom 0 Y Z)))
+(rule (dom X Y 0) X)
+(rule (dom 0 0 Z) 0)
+(rule (eval (fun (lambda ((x nat)) (F x)) X Y) Z) (F (dom X Y Z)))

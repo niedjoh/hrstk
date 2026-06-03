@@ -1,0 +1,14 @@
+; @cops 430
+; [83] Example 11.2.31
+(format HRS)
+(sort nat)
+(sort natlist)
+(fun nil natlist)
+(fun cons (-> nat natlist natlist))
+(fun append (-> natlist natlist natlist))
+(fun map (-> (-> nat nat) natlist natlist))
+(rule (append nil l) l)
+(rule (append (cons h t) l) (cons h (append t l)))
+(rule (append (append k l) m) (append k (append l m)))
+(rule (map (lambda ((x nat)) (F x)) nil) nil)
+(rule (map (lambda ((x nat)) (F x)) (cons h t)) (cons (F h) (map (lambda ((x nat)) (F x)) t)))

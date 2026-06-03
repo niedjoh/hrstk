@@ -1,0 +1,9 @@
+; @author Julian Nagele
+; @cops 474
+; [98] Example 9
+(format HRS)
+(sort a)
+(fun f (-> a a))
+(fun h (-> a a))
+(fun g (-> (-> a a) a))
+(rule (f (g (lambda ((x a)) (F x)))) (F (g (lambda ((x a)) (h (F x))))))

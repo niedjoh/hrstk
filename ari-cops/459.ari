@@ -1,0 +1,17 @@
+; @author Julian Nagele
+; @doi 10.1016/S0304-3975(97)00143-6
+; @cops 459
+; [94] Example 4.9
+(format HRS)
+(sort term)
+(sort form)
+(fun neg (-> form form))
+(fun and (-> form form form))
+(fun or (-> form form form))
+(fun forall (-> (-> term form) form))
+(fun exists (-> (-> term form) form))
+(rule (neg (neg z)) z)
+(rule (neg (and z z')) (or (neg z) (neg z')))
+(rule (neg (or z z')) (and (neg z) (neg z')))
+(rule (neg (forall (lambda ((x term)) (y x)))) (exists (lambda ((x term)) (neg (y x)))))
+(rule (neg (exists (lambda ((x term)) (y x)))) (forall (lambda ((x term)) (neg (y x)))))

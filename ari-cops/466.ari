@@ -1,0 +1,11 @@
+; @author Beniamono Accattoli
+; @doi 10.1016/0304-3975(94)90012-4
+; @cops 466
+; [87] Definition 3.1 with one rule reversed and untyped lambda-calculus
+(format HRS)
+(sort term)
+(fun abs (-> (-> term term) term))
+(fun app (-> term term term))
+(rule (app (abs (lambda ((x term)) (T x))) S) (T S))
+(rule (abs (lambda ((x term)) (app (abs (lambda ((y term)) (M y x))) S))) (app (abs (lambda ((y term)) (abs (lambda ((x term)) (M y x))))) S))
+(rule (app (app (abs (lambda ((x term)) (T x))) S) U) (app (abs (lambda ((x term)) (app (T x) U))) S))

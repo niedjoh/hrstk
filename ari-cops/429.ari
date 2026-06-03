@@ -1,0 +1,22 @@
+; @doi 10.1016/S0304-3975(98)00078-4
+; @cops 429
+; [83] Example 1 without rules for max and min
+(format HRS)
+(sort nat)
+(sort natlist)
+(fun 0 nat)
+(fun s (-> nat nat))
+(fun nil natlist)
+(fun cons (-> nat natlist natlist))
+(fun max (-> nat nat nat))
+(fun min (-> nat nat nat))
+(fun insert (-> nat natlist (-> nat nat nat) (-> nat nat nat) natlist))
+(fun sort (-> natlist (-> nat nat nat) (-> nat nat nat) natlist))
+(fun asort (-> natlist natlist))
+(fun dsort (-> natlist natlist))
+(rule (insert n nil (lambda ((x nat) (y nat)) (F x y)) (lambda ((x nat) (y nat)) (G x y))) (cons n nil))
+(rule (insert n (cons h t) (lambda ((x nat) (y nat)) (F x y)) (lambda ((x nat) (y nat)) (G x y))) (cons (F n h) (insert (G n h) t (lambda ((x nat) (y nat)) (F x y)) (lambda ((x nat) (y nat)) (G x y)))))
+(rule (sort nil (lambda ((x nat) (y nat)) (F x y)) (lambda ((x nat) (y nat)) (G x y))) nil)
+(rule (sort (cons h t) (lambda ((x nat) (y nat)) (F x y)) (lambda ((x nat) (y nat)) (G x y))) (insert h (sort t (lambda ((x nat) (y nat)) (F x y)) (lambda ((x nat) (y nat)) (G x y))) (lambda ((x nat) (y nat)) (F x y)) (lambda ((x nat) (y nat)) (G x y))))
+(rule (asort l) (sort l (lambda ((x nat) (y nat)) (min x y)) (lambda ((x nat) (y nat)) (max x y))))
+(rule (dsort l) (sort l (lambda ((x nat) (y nat)) (max x y)) (lambda ((x nat) (y nat)) (min x y))))

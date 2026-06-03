@@ -1,0 +1,12 @@
+; @author Julian Nagele
+; @doi 10.1093/ietisy/e88-d.3.583
+; @cops 481
+; [99] Example 8
+(format HRS)
+(sort o)
+(fun f (-> (-> (-> o o) o o) o))
+(fun g (-> o o))
+(fun h (-> o o o))
+(fun a o)
+(rule (f (lambda ((x (-> o o)) (y o)) (F (lambda ((z o)) (x z)) y))) (h (F (lambda ((z o)) (g z)) a) (F (lambda ((z o)) (g z)) a)))
+(rule (g a) (f (lambda ((x (-> o o)) (y o)) (h (x a) y))))

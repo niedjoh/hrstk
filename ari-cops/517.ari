@@ -1,0 +1,13 @@
+; @cops 517
+; [127] p. 209 without rank 2 polymorphism
+(format HRS)
+(sort a)
+(sort b)
+(fun nil b)
+(fun cons (-> a b b))
+(fun foldr (-> (-> a b b) b b b))
+(fun build (-> (-> (-> a b b) b b) b))
+(rule (foldr (lambda ((x a) (y b)) (k x y)) z nil) z)
+(rule (foldr (lambda ((x a) (y b)) (k x y)) z (cons x xs)) (k x (foldr (lambda ((x a) (y b)) (k x y)) z xs)))
+(rule (build (lambda ((k (-> a b b)) (z b)) (g (lambda ((x a) (y b)) (k x y)) z))) (g (lambda ((x a) (y b)) (cons x y)) nil))
+(rule (foldr (lambda ((x a) (y b)) (k x y)) z (build (lambda ((k (-> a b b)) (z b)) (g (lambda ((x a) (y b)) (k x y)) z)))) (g (lambda ((x a) (y b)) (k x y)) z))

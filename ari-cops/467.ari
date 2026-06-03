@@ -1,0 +1,11 @@
+; @author Beniamono Accattoli
+; @cops 467
+; variation of Definition 3.1 in [87]
+(format HRS)
+(sort term)
+(fun abs (-> (-> term term) term))
+(fun app (-> term term term))
+(rule (app (abs (lambda ((x term)) (T x))) S) (T S))
+(rule (abs (lambda ((x term)) (app (abs (lambda ((y term)) (M y x))) S))) (app (abs (lambda ((y term)) (abs (lambda ((x term)) (M y x))))) S))
+(rule (app (app (abs (lambda ((x term)) (T x))) S) U) (app (abs (lambda ((x term)) (app (T x) U))) S))
+(rule (app (abs (lambda ((y term)) (app (abs (lambda ((x term)) (M x y))) S))) U) (app (abs (lambda ((x term)) (app (abs (lambda ((y term)) (M x y))) U))) S))

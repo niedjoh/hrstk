@@ -1,0 +1,14 @@
+; @doi 10.1007/978-3-540-70590-1_21
+; @cops 437
+; [108] p. 318 with typo corrected
+(format HRS)
+(sort term)
+(fun abs (-> (-> term term) term))
+(fun app (-> term term term))
+(fun sub (-> (-> term term) term term))
+(rule (app (abs (lambda ((y term)) (X y))) Y) (sub (lambda ((y term)) (X y)) Y))
+(rule (sub (lambda ((y term)) X0) Y) X0)
+(rule (sub (lambda ((y term)) y) Y) Y)
+(rule (sub (lambda ((y term)) (abs (lambda ((x term)) (X2 x y)))) Y) (abs (lambda ((x term)) (sub (lambda ((y term)) (X2 x y)) Y))))
+(rule (sub (lambda ((y term)) (app (X y) (X' y))) Y) (app (sub (lambda ((y term)) (X y)) Y) (sub (lambda ((y term)) (X' y)) Y)))
+(rule (sub (lambda ((x term)) (sub (lambda ((y term)) (X2 y x)) (X x))) X0) (sub (lambda ((y term)) (sub (lambda ((x term)) (X2 y x)) X0)) (sub (lambda ((x term)) (X x)) X0)))

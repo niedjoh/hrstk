@@ -1,0 +1,18 @@
+; @author Julian Nagele
+; @cops 487
+; [85] p. 50
+(format HRS)
+(sort o)
+(fun f1 (-> o o))
+(fun f2 (-> o o o))
+(fun f3 (-> o o))
+(fun a o)
+(fun g1 (-> (-> o o) o))
+(fun hide (-> (-> o o) o))
+(fun unhide (-> o o))
+(fun g2 (-> (-> o o) o))
+(rule (f1 X) (f2 X X))
+(rule (f2 a X) (f3 X))
+(rule (g1 (lambda ((x o)) (f3 (F x)))) (F (hide (lambda ((x o)) (f3 (F x))))))
+(rule (unhide (hide (lambda ((x o)) (F x)))) (g2 (lambda ((x o)) (F x))))
+(rule (g2 (lambda ((x o)) (f3 (F x)))) (g1 (lambda ((x o)) (f1 (F x)))))

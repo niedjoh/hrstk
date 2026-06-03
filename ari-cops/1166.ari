@@ -1,0 +1,10 @@
+; @author Aart Middeldorp
+; @cops 1166
+; [14] p. 197; attributed to Roger Hindley, see also [157, Problem I.1]
+(format HRS)
+(sort term)
+(fun abs (-> (-> term term) term))
+(fun app (-> term term term))
+(fun Dh term)
+(rule (app (abs (lambda ((x term)) (F x))) S) (F S))
+(rule (app (app Dh z) z) z)

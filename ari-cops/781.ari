@@ -1,0 +1,13 @@
+; @author Makoto Hamana
+; @doi 10.1016/j.tcs.2007.09.024
+; @cops 781
+; [146] Section 3 (subsystem)
+(format HRS)
+(sort A)
+(sort N)
+(fun choice (-> A A A))
+(fun new (-> (-> N A) A))
+(rule (choice P Y) (choice Y P))
+(rule (choice (choice P Y) Z) (choice P (choice Y Z)))
+(rule (new (lambda ((x N)) P)) P)
+(rule (new (lambda ((x N)) (new (lambda ((y N)) (P4 x y))))) (new (lambda ((y N)) (new (lambda ((x N)) (P4 x y))))))
