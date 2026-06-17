@@ -3,6 +3,7 @@
 (format HRS)
 (sort a)
 (sort la)
+(fun s (-> a a))
 (fun plus (-> a a a))
 (fun mult (-> a a a))
 (fun 0 a)

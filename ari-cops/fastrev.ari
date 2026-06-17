@@ -1,5 +1,5 @@
 ; @author Johannes Niederhauser
-(format higher-order)
+(format HRS)
 (sort a)
 (sort la)
 (fun nil la)
