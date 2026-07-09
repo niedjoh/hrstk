@@ -22,18 +22,19 @@ import qualified Utils.Parse as UP
 import Utils.TypeInference (inferTypeIEq)
 import Typ.Type (Typ(..),Sort)
 import Term.Type (Term,FunTypMap)
-import Term.Ops (isHeadedByFreeVar,isDHP,isPattern,secondOrder,linear)
+import Term.Ops (isHeadedByFreeVar,isEPAT,isDHP,isPattern,secondOrder,linear)
 import Equation.Type (ES)
 import Equation.Ops (varCondition)
 
 -- |type of input system
-data InputType = ES | HRS | PRS | DPRS | DHPUnifProblem
+data InputType = ES | HRS | EPRS | DPRS | PRS | DHPUnifProblem
 
 instance Pretty InputType where
   pretty ES = "ES"
   pretty HRS = "HRS"
-  pretty PRS = "PRS"
+  pretty EPRS = "EPRS"
   pretty DPRS = "DPRS"
+  pretty PRS = "PRS"
   pretty DHPUnifProblem = "DHP unification problem"
 
 -- |Processes the input with consistent error handling
@@ -99,12 +100,20 @@ adjustToInputType PRS ie
   | not . isPattern . iTermToTerm . ilhs $ ie =
       Left $ constructITError PRS (iposl ie)
       "left-hand side is not a pattern"
-  | otherwise = Right ie
+  | otherwise = adjustToInputType HRS ie
 adjustToInputType DPRS ie
   | not . isDHP . iTermToTerm . ilhs $ ie =
       Left $ constructITError DPRS (iposl ie)
       "left-hand side is not a deterministic higher-order pattern" 
   | otherwise = adjustToInputType HRS ie
+adjustToInputType EPRS ie
+  | not . isEPAT . iTermToTerm . ilhs $ ie =
+      Left $ constructITError EPRS (iposl ie)
+      "left-hand side is not an extended pattern" 
+  | otherwise = adjustToInputType HRS ie
+
+
+  
 adjustToInputType DHPUnifProblem ie
   | not . isDHP . iTermToTerm . ilhs $ ie =
       Left $ constructITError DHPUnifProblem (iposl ie)

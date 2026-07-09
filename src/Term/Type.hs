@@ -28,6 +28,11 @@ type Subterm = (Context,[Typ],Pos,Term)
 -- |A map from constant identifiers to types
 type FunTypMap = Map Id Typ
 
+instance Pretty Head where
+  pretty (F idt) = pretty idt
+  pretty (FV v) = pretty v
+  pretty (DB i) = "DB" <> pretty i
+
 instance Pretty Term where
   pretty = go [] (0 :: Int) where
     prettyHd (F idt) _ = pretty idt

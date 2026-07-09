@@ -31,6 +31,16 @@ isFV (F _) = False
 isFV (FV _) = True
 isFV (DB _) = False
 
+isDB :: Head -> Bool
+isDB (F _) = False
+isDB (FV _) = False
+isDB (DB _) = True
+
+isDBGeq :: Int -> Head -> Bool
+isDBGeq _ (F _) = False
+isDBGeq _ (FV _) = False
+isDBGeq i (DB j) = j >= i
+
 -- |Computes the set of free variables of a term.
 freeVars :: Term -> Set Var
 freeVars s@(Term {hd = F _}) = S.unions (map freeVars (sp s))
@@ -128,21 +138,28 @@ expandedSubtermEqRel s t = expandedTerm t && go 0 s where
       t'' = shiftDB i' t'
       recRes = or [go i' u' | u' <- sp u]
 
+-- |determines whether a given term is a pattern in the sense of Miller
 isPattern :: Term -> Bool
 isPattern s@(Term {hd = FV _}) = all isDBTerm (sp s) && (not . anySame $ sp s)
 isPattern s = all isPattern (sp s)
 
--- |Determines whether a given term is a deterministic higher-order pattern
--- (free variables only have distinct ground arguments which contain at least
---  one bound variable and their eta-nf is not an abstraction)
+localRestriction :: [Term] -> Bool
+localRestriction ts =
+  not $ any (uncurry expandedSubtermEqRel) [ (u,v)
+                                           | (u,i) <- zip ts [0 :: Int ..]
+                                           , (v,j) <- zip ts [0..]
+                                           , i /= j ]
+
+-- |determines whether a given term is a deterministic higher-order pattern
 isDHP :: Term -> Bool
-isDHP s@(Term {hd = FV _}) =
-  all (\t -> danglingDB t && S.null (freeVars t) && expandedTerm t) (sp s) && localRestriction (sp s) where
-    localRestriction ts = not $ any (uncurry expandedSubtermEqRel) [ (u,v)
-                                                                   | (u,i) <- zip ts [0 :: Int ..]
-                                                                   , (v,j) <- zip ts [0..]
-                                                                   , i /= j ]
+isDHP s@(Term {hd = FV _}) = all (\t -> danglingDB t && S.null (freeVars t) && expandedTerm t) (sp s) && localRestriction (sp s)
 isDHP s = all isDHP $ sp s
+
+-- |determines whether a given term is an extended pattern
+isEPAT :: Term -> Bool
+isEPAT s@(Term {hd = FV _}) =
+  all (\t -> S.null (freeVars t) && expandedTerm t) (sp s)
+isEPAT s = all isEPAT $ sp s
 
 -- |Returns all subterms which satisfy the given predicate.
 -- Note that by definintion, subterms always have a sort type.

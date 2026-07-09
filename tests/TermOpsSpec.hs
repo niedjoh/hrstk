@@ -2,6 +2,9 @@
 
 module TermOpsSpec (termOpsSpecs) where
 
+import Debug.Trace (trace)
+import Prettyprinter (pretty)
+
 import qualified Data.Map.Strict as M
 
 import Test.Hspec (Spec, describe, it, shouldNotSatisfy, shouldSatisfy, shouldBe)
@@ -14,7 +17,7 @@ import qualified Predefined.Fun as Fun
 
 import Utils.Type (Id(..),Var(..))
 import Typ.Type (Typ(..))
-import Term.Type (Term(..))
+import Term.Type (Term(..),Head(..))
 import Term.Ops
 
 spec_freeVarsTypMap :: Spec
@@ -215,6 +218,11 @@ spec_isDHP =
                                                        , mkTerm DB.one Typ.a []
                                                        ]
         t10 = mkTerm Var.z Typ.a [ mkTerm Fun.c Typ.aa [ mkTerm DB.zero Typ.a [] ] ]
+        a11' = Typ [ Typ.aa ] Sort.a
+        a11 = Typ [ Typ.a, Typ.a, Typ.a, Typ.aa, a11' ] Sort.a
+        t11 = mkTerm Var.z a11 [ mkTerm DB.one Typ.a  [ mkTerm DB.zero Typ.a [ mkTerm (DB 5) Typ.aa [] ] ]
+                               , mkTerm DB.one Typ.aa [ mkTerm DB.one Typ.aa [ mkTerm DB.zero Typ.a [] ] ]
+                               ]
     it "accepts terms without free variables" $
       t1 `shouldSatisfy` isDHP
     it "accepts two different subterms" $
@@ -235,6 +243,8 @@ spec_isDHP =
       t9 `shouldSatisfy` isDHP
     it "rejects non-expanded terms" $
       t10 `shouldNotSatisfy` isDHP
+    it "rejects generated example" $
+      trace (show . pretty $ t11) (t11 `shouldNotSatisfy` isDHP)
 
 spec_filteredSubterms :: Spec
 spec_filteredSubterms =

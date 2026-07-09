@@ -5,7 +5,7 @@ import qualified Data.Set as S
 
 import Typ.Ops (sort)
 import Term.Type (Term(..))
-import Term.Ops (freeVars,isHeadedByFreeVar,isDHP,isPattern,linear,secondOrder)
+import Term.Ops (freeVars,isHeadedByFreeVar,isEPAT,isDHP,isPattern,linear,secondOrder)
 import Subst.Ops (apply)
 import Subst.Match (match)
 import Equation.Type (Equation(..))
@@ -39,6 +39,12 @@ patternRule e = rule e && isPattern (lhs e)
 -- * the left-hand side is a DHP
 dhpRule :: Equation -> Bool
 dhpRule e = rule e && isDHP (lhs e)
+
+-- |Checks whether the given equation fulfills the conditions to be an EPAT rule:
+-- * it is a valid rule
+-- * the left-hand side is an EPAT
+epatRule :: Equation -> Bool
+epatRule e = rule e && isEPAT (lhs e)
 
 -- |Checks whether the given equation is left-linear
 leftLinear :: Equation -> Bool

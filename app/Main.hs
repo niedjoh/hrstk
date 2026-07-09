@@ -42,7 +42,7 @@ import Utils.InputProcessing (InputType(..),processInput)
 import Typ.Type (Sort)
 import Term.Type (FunTypMap)
 import Equation.Type (Equation(..),ES)
-import Equation.Ops (rule, dhpRule, patternRule, leftLinear, secondOrderEq)
+import Equation.Ops (rule, epatRule, dhpRule, patternRule, leftLinear, secondOrderEq)
 import qualified Subst.Unif as Unif
 import qualified Equation.Rewriting as RW
 import qualified Equation.CriticalPairs as CP
@@ -128,7 +128,8 @@ leftLinearRestriction _ = False
 esTyp :: ES -> InputType
 esTyp es 
   | not (all rule es)        = ES
-  | not (all dhpRule es)     = HRS
+  | not (all epatRule es)    = HRS
+  | not (all dhpRule es)     = EPRS
   | not (all patternRule es) = DPRS
   | otherwise                = PRS
 

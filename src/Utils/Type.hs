@@ -11,6 +11,9 @@ import Prettyprinter (Pretty,pretty)
 -- |newtype wrapper for 'Text'-based identifiers
 newtype Id = Id Text deriving (Eq,Ord,Show,Pretty)
 
+idToText :: Id -> Text
+idToText (Id t) = t
+
 -- |Variables are either named or fresh variables which are referenced by a unique integer.
 data Var = Named Id | Fresh Int deriving (Eq,Ord,Show)
 
