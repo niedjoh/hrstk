@@ -2,7 +2,6 @@
 
 module TermOpsSpec (termOpsSpecs) where
 
-import Debug.Trace (trace)
 import Prettyprinter (pretty)
 
 import qualified Data.Map.Strict as M
@@ -244,7 +243,7 @@ spec_isDHP =
     it "rejects non-expanded terms" $
       t10 `shouldNotSatisfy` isDHP
     it "rejects generated example" $
-      trace (show . pretty $ t11) (t11 `shouldNotSatisfy` isDHP)
+      t11 `shouldNotSatisfy` isDHP
 
 spec_filteredSubterms :: Spec
 spec_filteredSubterms =

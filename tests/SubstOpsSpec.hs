@@ -157,6 +157,15 @@ spec_apply =
            , mkTerm Var.z Typ.aa [ mkTerm DB.zero Typ.a [] ]
            )
          ]
+        a6 = Typ [ Typ.a, Typ.aa, Typ.a, Typ.a ] Sort.a
+        a61 = Typ [ Typ.aa ] Sort.a
+        t6 = mkTerm Var.z a6 [ mkTerm DB.three Typ.aa [ mkTerm DB.zero Typ.a [] ] ]
+        s6 = Subst . M.fromList $
+         [ ( z
+            , mkTerm DB.zero a61 [ mkTerm Fun.f Typ.a [ mkTerm Fun.g Typ.aa [ mkTerm Fun.g Typ.aa [ mkTerm DB.two Typ.aa [] ] ] ] ]
+            )
+         ]
+        t6' = mkTerm DB.two a6 [ mkTerm Fun.f Typ.a [ mkTerm Fun.g Typ.aa [ mkTerm Fun.g Typ.aa [ mkTerm DB.two Typ.aa [] ] ] ] ] 
     it "computes an example correctly" $
       apply s1 t1 `shouldBe` t1'
     it "shifts DBs of eta-expanded arguments" $
@@ -169,6 +178,8 @@ spec_apply =
       apply s5 t51 `shouldBe` t5
     it "shift example 2" $
       apply s5 t52 `shouldBe` t5
+    it "succeeds on generated example" $
+      apply s6 t6 `shouldBe` t6'
       
 
 spec_compose :: Spec
