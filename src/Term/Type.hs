@@ -38,7 +38,7 @@ instance Pretty Term where
     prettyHd (F idt) _ = pretty idt
     prettyHd (FV v) _ = pretty v
     prettyHd (DB i) ctx
-      | i < 0          = "DB" <> pretty i -- TODO error "negative DB"
+      | i < 0          = error "negative DB"
       | i < length ctx = ctx !! i
       | otherwise      = error "dangling DB"
     prettyAbs k vars
