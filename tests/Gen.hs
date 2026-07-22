@@ -11,8 +11,6 @@ module Gen ( typClosure
            , genSubst )
 where
 
-import Debug.Trace (trace)
-
 import Control.Monad (replicateM)
 import Data.List (isSuffixOf,partition)
 import Data.List.Extra (splitAtEnd)
@@ -80,7 +78,7 @@ availMap as = let n = length as in M.fromListWith (++)
       | let cs = argTyps a
       , h <- [ DB $ n-i-1
              , F . Id $ "f" <> T.pack (show i)
-             , FV . Fresh $ i
+             , FV . Named . Id $ "Z" <> T.pack (show i)
              ]
       ]
      )

@@ -18,9 +18,9 @@ import Typ.Type (Typ(..),Sort)
 import Typ.Ops (arity,argTyps)
 import Term.Type (Term(..),Head(..))
 import Term.Ops (freeVars,hdToTerm,addLams)
+import Subst.Match (match)
 import Subst.Type (Subst(..))
 import Subst.Ops (empty,singleton,restrictToVars,compose,applyToPair,discharge)
-import Subst.Match (match)
 import Equation.Type (Equation)
 
 data UnifCase = Fail
@@ -28,9 +28,10 @@ data UnifCase = Fail
               | Dec Term Term
               | Var Var Term
               | Prj Var Typ Int [Term]
-              | ImtPrj Bool (Term,Term) Var Typ [Typ] Id [Term]
+              | ImtPrj Var Typ [Typ] Id [Term]
               | FFE Var Sort [Term] [Term]
               | FFN Var Var Int Sort [Term] [Term]
+              | PostponeOrFail Var (Term,Term) (MaybeT FreshM [Subst])
 
 -- |Computes a minimal complete set of unifiers of the two terms.
 unif :: Term -> Term -> MaybeT FreshM [Subst]
@@ -39,47 +40,46 @@ unif lterm rterm =
     vars = freeVars lterm `S.union` freeVars rterm
     findVar var = M.findWithDefault [] var
     deleteVar var = M.delete var
+    applySubstL subst = map (applyToPair subst)
+    applySubstM subst = M.map (applySubstL subst) 
     go (tp:tps) pm subst = case unifCase tp of
       Fail -> return []
       Rem -> go tps pm subst
       Dec s t -> go (tps ++ zip (map absSubt (sp s)) (map absSubt (sp t))) pm subst where
         absSubt = addLams (argTyps . typ $ s)
-      Var var t -> go (applySubst $ tps ++ findVar var pm)
-                      (deleteVar var pm)
+      Var var t -> go (applySubstL varToT $ tps ++ findVar var pm)
+                      (applySubstM varToT (deleteVar var pm))
                       (compose varToT subst) where
         varToT = singleton var t
-        applySubst = map (applyToPair varToT)
-      Prj var a i ss -> do
-        varToUs <- prj var a i ss
-        concat <$> sequence [ go (map (applyToPair varToU) $ (tp:tps) ++ findVar var pm)
-                                 (deleteVar var pm)
+      Prj var a j ss -> do
+        varToUs <- prj var a j ss
+        concat <$> sequence [ go (applySubstL varToU $ (tp:tps) ++ findVar var pm)
+                                 (applySubstM varToU (deleteVar var pm))
                                  (compose varToU subst)
                             | varToU <- varToUs
                             ]
-      ImtPrj True tp' var a as f ss -> do -- fail or postpone if variable also occurs on right-hand side
+      ImtPrj var a as f ss -> do
         varToUs <- imtPrj var a as f ss
-        case varToUs of
-          [] -> error "impossible case"
-          (_:projections) -> if any isJust [uncurry (flip match) . applyToPair p $ tp' | p <- projections]
-            then go tps (M.insertWith (++) var [tp] pm) subst 
-            else return []
-      ImtPrj False _ var a as f ss -> do
-        varToUs <- imtPrj var a as f ss
-        concat <$> sequence [ go (map (applyToPair varToU) $ (tp:tps) ++ findVar var pm)
-                                 (deleteVar var pm)
+        concat <$> sequence [ go (applySubstL varToU $ (tp:tps) ++ findVar var pm)
+                                 (applySubstM varToU (deleteVar var pm))
                                  (compose varToU subst)
                             | varToU <- varToUs
                             ]
       FFE var a ss ts -> do
         varToU <- ffe var a ss ts
-        go (map (applyToPair varToU) $ tps ++ findVar var pm)
-           (deleteVar var pm)
+        go (applySubstL varToU $ tps ++ findVar var pm)
+           (applySubstM varToU (deleteVar var pm))
            (compose varToU subst)
       FFN sVar tVar k a ss ts -> do
         stVarsToUV <- ffn sVar tVar k a ss ts
-        go (map (applyToPair stVarsToUV) $ tps ++ findVar sVar pm ++ findVar tVar pm)
-           (deleteVar sVar $ deleteVar tVar pm)
+        go (applySubstL stVarsToUV $ tps ++ findVar sVar pm ++ findVar tVar pm)
+           (applySubstM stVarsToUV (deleteVar sVar $ deleteVar tVar pm))
            (compose stVarsToUV subst)
+      PostponeOrFail var tp' mprojs -> do
+        projs <- mprojs
+        if any isJust [uncurry (flip match) . applyToPair p $ tp' | p <- projs]
+          then go tps (M.insertWith (++) var [tp] pm) subst 
+          else return []
     go [] pm subst = do
       guard $ M.null pm
       return [subst]
@@ -98,9 +98,12 @@ unifCase (s,t)
       | otherwise   = FFN uVar vVar (nlams u) b (sp u) (sp v)
     cases u@(Term {hd = FV var, typ = Typ _ b}) v
       | varCond u var v = Var var v
-      | F f <- hd v = ImtPrj (var `S.member` freeVars v) (u,v) var a (map typ (sp v)) f (sp u)
-      | DB i <- hd v = if var `S.member` freeVars v then Fail else Prj var a i (sp u)
+      | F f <- hd v, var `S.member` freeVars v = PostponeOrFail var (u,v) (drop 1 <$> imtPrj var a as  f (sp u))
+      | F f <- hd v = ImtPrj var a (map typ (sp v)) f (sp u)
+      | DB i <- hd v, var `S.member` freeVars v = PostponeOrFail var (u,v) (prj var a i (sp u))
+      | DB i <- hd v = Prj var a i (sp u)
       where
+        as = map typ (sp v)
         bs = map typ (sp u)
         a = Typ bs b
     cases u v

@@ -84,7 +84,7 @@ applyAbsToTerms s ts = do
 
 -- |This function replaces subterms by  De Bruijn indices according to the association list.
 -- DBs up to the first argument can only be constructed from the terms in the association list.
--- DBS above the first argument are normalized accordingly.
+-- DBs above the first argument are normalized accordingly.
 -- It is assumed that the eta-NFs of the terms in the association list are not abstractions.
 discharge :: Int -> [(Term,Int)] -> Term -> Maybe Term
 discharge k lu u = go lu 0 u where

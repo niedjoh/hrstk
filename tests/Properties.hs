@@ -50,7 +50,7 @@ prop_unif = property $ do
   msubsts <- eval $ evalState (runMaybeT $ unif s t) 0
   case msubsts of
     Nothing -> do
-      label "unifiable, MCSU not computed"
+      label "gave up"
     Just [] ->  do
       label "not unifiable"
       let test = genSubst availM $ freeVarsTypMap s `M.union` freeVarsTypMap t
