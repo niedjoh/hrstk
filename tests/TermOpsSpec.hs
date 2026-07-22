@@ -2,8 +2,6 @@
 
 module TermOpsSpec (termOpsSpecs) where
 
-import Prettyprinter (pretty)
-
 import qualified Data.Map.Strict as M
 
 import Test.Hspec (Spec, describe, it, shouldNotSatisfy, shouldSatisfy, shouldBe)

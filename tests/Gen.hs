@@ -29,7 +29,7 @@ import Utils.Type (Id(..),Var(..))
 import Typ.Type (Typ(..),Sort)
 import Typ.Ops (argTyps,returnSort,arity)
 import Term.Type (Term(..),Head(..))
-import Term.Ops (isFV,isDB,isDBGeq,hdToTerm,addLams,localRestriction)
+import Term.Ops (isFV,isDBGeq,hdToTerm,addLams,localRestriction)
 import Subst.Type (Subst(..))
 
 type AvailMap = Map Sort [(Head,Int,[Typ])]
