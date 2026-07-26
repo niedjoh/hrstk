@@ -2,7 +2,8 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Gen ( typClosure
+module Gen ( AvailMap
+           , typClosure
            , availMap
            , genTyp
            , genArbitraryTerm
@@ -11,7 +12,6 @@ module Gen ( typClosure
            , genSubst )
 where
 
-import Control.Monad (replicateM)
 import Data.List (isSuffixOf,partition)
 import Data.List.Extra (splitAtEnd)
 import Data.Map.Strict (Map)
@@ -19,11 +19,9 @@ import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import qualified Data.Text as T
 import Data.Tuple.Extra (fst3,snd3,thd3)
-import Hedgehog (MonadGen, Gen, Size)
+import Hedgehog (MonadGen,Gen)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import Prettyprinter (Pretty,pretty,vsep)
-import Prettyprinter.Render.Text (putDoc)
 
 import Utils.Type (Id(..),Var(..))
 import Typ.Type (Typ(..),Sort)
@@ -151,23 +149,3 @@ genTermPair as availM genl genr a = do
 
 genSubst :: AvailMap -> Map Var Typ -> Gen Subst
 genSubst availM m = Subst <$> traverse (genTerm availM False 0 Nothing) m
-
-printSamples :: Pretty a => ([Typ] -> AvailMap -> Id -> Gen a) -> Int -> Typ -> IO ()
-printSamples gen i a = do
-  let as = typClosure a
-  let availM = availMap as
-  ps <- replicateM i $ Gen.sample $ gen as availM (returnSort a)
-  putDoc (vsep . map pretty $ ps)
-  putStrLn ""
-
-printTypSamples :: Size -> Int -> IO ()
-printTypSamples size i = do
-  ps <- replicateM i $ Gen.sample $ Gen.resize size $ genTyp
-  putDoc (vsep . map pretty $ ps)
-  putStrLn ""
-
-printTermSamples :: Size -> Int -> Typ -> IO ()
-printTermSamples size = printSamples (\as availM a -> Gen.resize size $ genArbitraryTerm as availM a)
-
-printDHPSamples :: Size -> Int -> Typ -> IO ()
-printDHPSamples size = printSamples (\as availM a -> Gen.resize size $ genDHP as availM a)
