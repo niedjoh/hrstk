@@ -51,6 +51,10 @@ Run `cabal run hrstk-test` for unit/property tests.
 
 You can use `cabal run hrstk-gen -- <ARGS>` to generate terms/DHPs
 
+## Transformation of Ari-files
+
+Use `cabal run hrstk-transform -- <absolute path to directory containing .ari files>` to transform .ari-files
+
 ## Input Requirements
 
 The input must be in beta-normal form. Equations are eta-expanded and pulled down to their return sort
