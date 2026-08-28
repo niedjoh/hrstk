@@ -66,6 +66,10 @@ library hrstk-lib
     , Termination.NCPO.Type
     , Termination.NCPO.Ordering
     , Termination.NCPO.Solver
+    , Termination.StarCPO
+    , Termination.StarCPO.Type
+    , Termination.StarCPO.Ordering
+    , Termination.StarCPO.Solver
     , Termination.Poly
     , Termination.Poly.Type
     , Termination.Poly.Interpretation

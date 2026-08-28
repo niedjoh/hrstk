@@ -10,4 +10,3 @@ fst4 (x,_,_,_) = x
 allPossibilities :: [[a]] -> [[a]]
 allPossibilities [] = [[]]
 allPossibilities (xs:xss) = concat [map (x:) (allPossibilities xss) | x <- xs]
-

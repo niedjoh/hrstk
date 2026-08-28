@@ -28,6 +28,7 @@ interpret m s = iterate PLam (foldl pBeta fp (map (interpret m) (sp s))) !! nlam
     F f -> M.findWithDefault (error "lookup failed") f m
     FV v -> pVarToFPoly k (PFV v)
     DB i -> pVarToFPoly k (PDB (i + k))
+    FStar _ _ -> error "impossible case"
 
 -- |Generate a polynomial constant interpretation consisting of:
 -- * linear part: a0 + a1 * x1(b11,...,b1k1) + an * xn(bn1,...,bnkn) for arguments x1,...xn

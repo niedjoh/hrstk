@@ -17,7 +17,7 @@ type Pos = [Int]
 
 -- |Terms are simply-typed lambda terms in lnf with full local type information.
 data Term = Term { nlams :: Int, hd :: Head, sp :: [Term], typ :: Typ} deriving (Eq,Ord,Show)
-data Head = F Id | FV Var | DB Int deriving (Eq,Ord,Show)
+data Head = F Id | FStar Id Int | FV Var | DB Int deriving (Eq,Ord,Show)
 
 -- |Contexts are implemented as Haskell functions from terms to terms.
 type Context = Term -> Term
@@ -30,12 +30,14 @@ type FunTypMap = Map Id Typ
 
 instance Pretty Head where
   pretty (F idt) = pretty idt
+  pretty (FStar idt _) = pretty idt <> "*"
   pretty (FV v) = pretty v
   pretty (DB i) = "DB" <> pretty i
 
 instance Pretty Term where
   pretty = go [] (0 :: Int) where
     prettyHd (F idt) _ = pretty idt
+    prettyHd (FStar idt _) _ = pretty idt <> "*"
     prettyHd (FV v) _ = pretty v
     prettyHd (DB i) ctx
       | i < 0          = error "negative DB"

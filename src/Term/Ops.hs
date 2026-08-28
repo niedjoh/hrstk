@@ -23,36 +23,32 @@ mkTerm h a ts = Term {nlams = arity a, hd = h, sp = ts, typ = a}
 -- |Checks whether a head is a function symbol
 isFun :: Head -> Bool
 isFun (F _) = True
-isFun (FV _) = False
-isFun (DB _) = False
+isFun (FStar _ _) = True
+isFun _ = False
 
 isFV :: Head -> Bool
-isFV (F _) = False
 isFV (FV _) = True
-isFV (DB _) = False
+isFV _ = False
 
 isDB :: Head -> Bool
-isDB (F _) = False
-isDB (FV _) = False
 isDB (DB _) = True
+isDB _ = False
 
 isDBGeq :: Int -> Head -> Bool
-isDBGeq _ (F _) = False
-isDBGeq _ (FV _) = False
 isDBGeq i (DB j) = j >= i
+isDBGeq _ _ = False
 
 -- |Computes the set of free variables of a term.
 freeVars :: Term -> Set Var
-freeVars s@(Term {hd = F _}) = S.unions (map freeVars (sp s))
 freeVars s@(Term {hd = FV v}) = S.unions (S.singleton v : map freeVars (sp s))
-freeVars s@(Term {hd = DB _}) = S.unions (map freeVars (sp s))
+freeVars s = S.unions (map freeVars (sp s))
+
 
 -- |Computes the free variables and their types of a term.
 freeVarsTypMap :: Term -> Map Var Typ
-freeVarsTypMap s@(Term {hd = F _}) = M.unions (map freeVarsTypMap (sp s))
 freeVarsTypMap s@(Term {hd = FV v, typ = Typ _ a}) =
   M.unions $ M.singleton v (Typ (map typ $ sp s) a) : map freeVarsTypMap (sp s)
-freeVarsTypMap s@(Term {hd = DB _}) = M.unions (map freeVarsTypMap (sp s))
+freeVarsTypMap s= M.unions (map freeVarsTypMap (sp s))
 
 -- |Determines whether the head of the term is a free variable.
 isHeadedByFreeVar :: Term -> Bool
@@ -74,9 +70,9 @@ linear = all (\xs -> length xs < 2)  . group . sort . go where
 -- More precicely, "second order" means hat all constants have types of order at most three,
 -- free variables have types of order at most two and bound variables have order at most one.
 secondOrder :: Term -> Bool
-secondOrder s@(Term {hd = F _}) = all ((<= 2) . order . typ) (sp s) && all secondOrder (sp s)
 secondOrder s@(Term {hd = FV _}) = all ((<= 1) . order . typ) (sp s) && all secondOrder (sp s)
 secondOrder s@(Term {hd = DB _}) = null (sp s)
+secondOrder s = all ((<= 2) . order . typ) (sp s) && all secondOrder (sp s)
 
 -- |Given a type and a head, this function returns the corresponding
 -- term in lnf.
