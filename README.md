@@ -47,6 +47,10 @@ Use `cabal run hrstk -- <ARGS>` or install it via `cabal build` or `cabal instal
 
 Run `cabal run hrstk-test` for unit/property tests.
 
+## Generation of terms
+
+You can use `cabal run hrstk-gen -- <ARGS>` to generate terms/DHPs
+
 ## Input Requirements
 
 The input must be in beta-normal form. Equations are eta-expanded and pulled down to their return sort

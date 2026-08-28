@@ -2,7 +2,8 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Gen ( typClosure
+module Gen ( AvailMap
+           , typClosure
            , availMap
            , genTyp
            , genArbitraryTerm
@@ -18,7 +19,7 @@ import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import qualified Data.Text as T
 import Data.Tuple.Extra (fst3,snd3,thd3)
-import Hedgehog (MonadGen, Gen)
+import Hedgehog (MonadGen,Gen)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 

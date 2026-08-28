@@ -2,7 +2,7 @@ cabal-version:      3.0
 name:               hrstk
 version:            0.1.0.0
 
-synopsis: Higher-Order COmpletion tool
+synopsis: Higher-order Rewriting System ToolKit
 
 -- A longer description of the package.
 -- description:
@@ -31,6 +31,17 @@ executable hrstk
      , time
      , transformers ^>= 0.6.1.2
   hs-source-dirs:   app
+  default-language: Haskell2010
+
+executable hrstk-gen
+  main-is:          Main.hs
+  build-depends:
+       base >= 4.18
+     , hrstk-lib
+     , hedgehog
+     , optparse-applicative
+     , prettyprinter
+  hs-source-dirs:   app-gen
   default-language: Haskell2010
   
 library hrstk-lib
@@ -79,6 +90,7 @@ library hrstk-lib
     , TPTP.Parse
     , ARI
     , ARI.Parse
+    , Gen
   build-depends:
       base >= 4.19
     , containers
@@ -86,6 +98,7 @@ library hrstk-lib
     , extra
     , fmt
     , hasmtlib ^>= 2.8.1
+    , hedgehog
     , megaparsec
     , mtl
     , multiset
@@ -112,7 +125,6 @@ test-suite hrstk-test
     , RewritingSpec
     , CriticalPairsSpec
     , NCPOSpec
-    , Gen
     , Properties
     , Predefined.Sort
     , Predefined.Typ
@@ -123,7 +135,8 @@ test-suite hrstk-test
   build-depends:
       base >= 4.18
     , containers
-    , extra
+    , hrstk-lib
+    , hasmtlib ^>= 2.8.1
     , hedgehog
     , hspec
     , mtl
@@ -131,9 +144,6 @@ test-suite hrstk-test
     , tasty
     , tasty-hedgehog
     , tasty-hspec
-    , text
     , transformers ^>= 0.6.1.2
-    , hasmtlib ^>= 2.8.1
-    , hrstk-lib
   default-language: Haskell2010
   ghc-options: -main-is Test -Wall
