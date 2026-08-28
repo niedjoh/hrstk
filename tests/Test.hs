@@ -12,6 +12,7 @@ import EquationOpsSpec (equationOpsSpecs)
 import RewritingSpec (rewritingSpecs)
 import CriticalPairsSpec (criticalPairsSpecs)
 import NCPOSpec (ncpoSpecs)
+import StarCPOSpec (scpoSpecs)
 import Properties (props)
 
 main :: IO ()
@@ -25,6 +26,7 @@ main = do
                                      , rewritingSpecs
                                      , criticalPairsSpecs
                                      , ncpoSpecs
+                                     , scpoSpecs
                                      ]
   defaultMain $ testGroup "All Tests" [ testGroup "Specs" specs
                                       , testGroup "Properties" props]

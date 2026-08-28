@@ -49,6 +49,7 @@ import qualified Equation.CriticalPairs as CP
 import Termination
 import qualified Termination.Poly.Solver as Poly
 import qualified Termination.NCPO.Solver as NCPO
+import qualified Termination.StarCPO.Solver as StarCPO
 import Confluence
 import qualified TPTP
 import qualified ARI
@@ -255,7 +256,7 @@ argsParser = Args
      <> short 't'
      <> showDefault
      <> value Nothing
-     <> metavar "ncpo | poly"
+     <> metavar "ncpo | poly | starcpo"
      <> help "specific termination method" )
   <*> option (eitherReader $ confMethodFromString . map toLower)
       ( long "conf-method"
@@ -298,7 +299,8 @@ modeFromString _ = Left "supported modes are 'info', 'term', 'conf', 'unif', and
 termMethodFromString :: String -> Either String (Maybe TermMethod)
 termMethodFromString "ncpo" = Right (Just NCPO)
 termMethodFromString "poly" = Right (Just Poly)
-termMethodFromString _ = Left "supported termination methods are 'ncpo' and 'poly'"
+termMethodFromString "starcpo" = Right (Just StarCPO)
+termMethodFromString _ = Left "supported termination methods are 'ncpo', 'poly' and 'starcpo'"
 
 confMethodFromString :: String -> Either String (Maybe ConfMethod)
 confMethodFromString "ortho" = Right (Just OR)

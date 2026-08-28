@@ -41,12 +41,15 @@ dbMap ts = M.fromDescList $ zip [k-1,k-2 .. 0] ts where
 
 -- |Applies a map from De Bruijn indices to terms to a term.
 -- must be applied to non-abstraction!
-applyDBMap :: Int -> Map Int Term -> Term -> Term
-applyDBMap j = go 0 where
+-- j is the number of abstractions which have removed from the term
+-- l is the number of abstractions which will be re-added (for partial applications)
+-- j & l are needed when a prefix of abstractions is instantiated; for free usage, set both to 0
+applyDBMap :: Int -> Int -> Map Int Term -> Term -> Term
+applyDBMap j l = go 0 where
   go k m s
     | DB i <- hd s, Just u <- m M.!? (i-k') =
-       (applyDBMap (nlams u) (dbMap recRess) (shiftDB k' u){nlams = 0, typ = returnTyp (typ u)}){nlams = nlams s, typ = typ s}
-    | DB i <- hd s, i >= k' = s{hd = DB $ i - j, sp = recRess}
+       (applyDBMap (nlams u) 0 (dbMap recRess) (shiftDB k' u){nlams = 0, typ = returnTyp (typ u)}){nlams = nlams s, typ = typ s}
+    | DB i <- hd s, i >= k' + l = s{hd = DB $ i - j, sp = recRess}
     | otherwise = s{sp = recRess}
     where
       k' = k + nlams s
@@ -57,7 +60,7 @@ apply :: Subst -> Term -> Term
 apply = go 0 where
   go k subst s
     | FV v <- hd s, Just u <- subst !? v =
-      (applyDBMap (nlams u) (dbMap recRess) (shiftDB k' u){nlams = 0, typ = returnTyp (typ s)}){nlams = nlams s, typ = typ s}
+      (applyDBMap (nlams u) 0 (dbMap recRess) (shiftDB k' u){nlams = 0, typ = returnTyp (typ s)}){nlams = nlams s, typ = typ s}
     | otherwise = s{sp = recRess}
     where
       k' = k + nlams s
@@ -73,14 +76,18 @@ compose subst@(Subst m) (Subst n) = Subst (M.union (M.map (apply subst) n) m)
 -- |Apply an abstraction to a given variable
 applyAbsToVar :: Term -> Var -> Term
 applyAbsToVar s@(Term {typ = Typ (a:as) b}) v =
-  applyDBMap 0 (M.singleton 0 (hdToTerm a $ FV v)) s{nlams = nlams s - 1, typ = Typ as b}
+  (applyDBMap 1 n (M.singleton n (hdToTerm a $ FV v)) s{nlams = 0, typ = returnTyp (typ s)}){nlams = n, typ = Typ as b} where
+    n = nlams s - 1
 applyAbsToVar _ _ = error "term is not an abstraction"
 
 -- |Apply an abstraction to a list of terms.
 applyAbsToTerms :: Term -> [Term] -> Maybe Term
 applyAbsToTerms s ts = do
   a <- applyTyps (typ s) (map typ ts)
-  Just $ applyDBMap 0 (dbMap ts) s{nlams = arity a, typ = a}
+  let n = length ts
+  let m = arity a
+  let dbm = M.fromDescList $ zip [n+m-1,n+m-2 .. 0] ts
+  Just $ (applyDBMap n m dbm s{nlams = 0, typ = returnTyp (typ s)}){nlams = m, typ = a}
 
 -- |This function replaces subterms by  De Bruijn indices according to the association list.
 -- DBs up to the first argument can only be constructed from the terms in the association list.

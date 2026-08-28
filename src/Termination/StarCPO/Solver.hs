@@ -7,7 +7,6 @@ module Termination.StarCPO.Solver where
 
 import Prelude hiding ((&&),(||),and,or,not)
 
-import Control.Monad.Trans.State (evalState)
 import Data.Default (def)
 import Data.List (groupBy,sortBy,partition)
 import qualified Data.Map.Strict as M
@@ -22,17 +21,17 @@ import Typ.Type (Typ(..),Sort)
 import Typ.Ops (arity,posOf,posPos)
 import Term.Type (FunTypMap)
 import Equation.Type (Equation(..),ES)
-import Termination.NCPO.Type
-import Termination.NCPO.Ordering (ncpoWrapper)
+import Termination.StarCPO.Type
+import Termination.StarCPO.Ordering (scpoWrapper)
 
--- |result of termination proof attempt by NCPO
-data NCPORes = NCPORes
+-- |result of termination proof attempt by StarCPO
+data CPORes = CPORes
   { status :: Bool
   , mSol :: Maybe CPOSolution
   }
 
-failRes :: NCPORes
-failRes = NCPORes { status = False
+failRes :: CPORes
+failRes = CPORes { status = False
                   , mSol = Nothing
                   }
                 
@@ -86,8 +85,8 @@ basicCond cpoInfo fs fTyps c = not (basic ! c) ||
     fun (f,_,i) = not (acc ! (f,i))
     relevantAccs = [(f,a,i) | f <- fs, (Typ as c') <- [fTyps M.! f], c == c', (a,i) <- zip as [0..]]
 
--- |Check termination of an HRS using NHORPO
-checkTermination :: SMTSolver -> Bool -> [Sort] -> FunTypMap -> ES -> IO NCPORes
+-- |Check termination of an HRS using StarCPO
+checkTermination :: SMTSolver -> Bool -> [Sort] -> FunTypMap -> ES -> IO CPORes
 checkTermination (Solver _ s _) debug ss fTyps hrs = do
   let fs = M.keys fTyps
   (res,msol) <- SMT.solveWith (if debug then SMT.solver (SMT.debugging def s) else SMT.solver s) $ do
@@ -108,17 +107,17 @@ checkTermination (Solver _ s _) debug ss fTyps hrs = do
     mapM_ (SMT.assert . basicCond cpoinfo fs fTyps) ss
     mapM_ SMT.assert [accessibleCond cpoinfo f i a b
                      | f <- fs, Typ as b <- [fTyps M.! f], (a,i) <- zip as [0..]]
-    let constraints = evalState (mapM (\e -> ncpoWrapper cpoinfo (lhs e) (rhs e)) hrs) 0
+    let constraints = map (\e -> scpoWrapper cpoinfo (lhs e) (rhs e)) hrs
     mapM_ SMT.assert constraints
     return (sortPrec,st,funPrec,basic,accessible)
   let boolRes = case res of
         SMT.Sat -> True
         SMT.Unsat -> False
         SMT.Unknown -> False
-  return $ NCPORes { status = boolRes, mSol = msol }
+  return $ CPORes { status = boolRes, mSol = msol }
 
--- |Print the result of a solution attempt to a termination check using NCPO.
-resultDoc :: NCPORes -> Doc ann
+-- |Print the result of a solution attempt to a termination check using StarCPO
+resultDoc :: CPORes -> Doc ann
 resultDoc res = let
     prettySortPrec prec =
       hsep . punctuate " >" $ [ hsep . punctuate " ~" $ [pretty idt | idt <- eqs]
@@ -134,7 +133,7 @@ resultDoc res = let
            | ((c,i):xs) <- groupBy (\x y -> fst x == fst y) . M.keys . M.filter id $ m]
   in case mSol res of
     Just (sortPrec,st,funPrec,basic,acc) -> line <> line <>
-      "termination proof by NCPO" <> line <> line <>
+      "termination proof by StarCPO" <> line <> line <>
       "status:" <> line <> line <>  prettyStatus st <> line <> line <>
       "sort precedence:" <> line <> line <> prettySortPrec sortPrec <> line <> line <>
       "function symbol precedence:" <> line <> line <> prettyFunPrec funPrec st <> line <> line <>

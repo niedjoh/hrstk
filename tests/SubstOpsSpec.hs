@@ -59,8 +59,13 @@ spec_applyDBMap =
                                                        ]
                                   , mkTerm DB.zero Typ.a []
                                   ]
-    it "computes an example correctly" $
-      applyDBMap 0 m1 t1 `shouldBe` t1'
+        m2 = M.fromList [ (1, mkTerm DB.zero Typ.aa [] ) ]
+        t2 = mkTerm DB.one Typ.a [ mkTerm DB.zero Typ.a [] ] 
+        t2' = mkTerm DB.zero Typ.a []
+    it "computes free example correctly" $
+      applyDBMap 0 0 m1 t1 `shouldBe` t1'
+    it "computes partial application correctly" $
+      applyDBMap 1 1 m2 t2 `shouldBe` t2'
 
 spec_apply :: Spec
 spec_apply =
@@ -221,12 +226,31 @@ spec_applyAbsToTerms =
     let t1 = mkTerm DB.one (Typ [Typ.aa, Typ.a] Sort.a) [ mkTerm DB.zero Typ.a [] ]
         t2 = mkTerm DB.zero Typ.aa []
         t3 = mkTerm Fun.c Typ.a []
+        a4 = Typ [Typ.a, Typ.aa] Sort.a
+        t4 = mkTerm Fun.g a4 [ mkTerm DB.three Typ.a [ mkTerm DB.one Typ.a [] ]
+                             , mkTerm DB.zero Typ.a [ mkTerm DB.two Typ.a [] ]
+                             , mkTerm Var.x Typ.a []
+                             ]
+        t5 = mkTerm Var.y Typ.a []
+        t6 = mkTerm DB.zero Typ.aa []
+        t7 = mkTerm Fun.g Typ.a [ mkTerm DB.one Typ.a [t5]
+                                , mkTerm DB.zero Typ.a []
+                                , mkTerm Var.x Typ.a []
+                                ]
+        t8 = mkTerm Var.x Typ.aa [ mkTerm DB.zero Typ.a [] ]
+        t9 = mkTerm Fun.f Typ.a [ mkTerm DB.zero Typ.a [] ]
+        t10 = mkTerm Var.x Typ.a [ t9 ]
     it "computes positive example correctly" $
       applyAbsToTerms t1 [t2,t3] `shouldBe` Just t3
     it "computes negative example correctly" $
       applyAbsToTerms t1 [t2,t3,t3] `shouldBe` Nothing
     it "can handle partial application" $
       applyAbsToTerms t1 [t2] `shouldBe` (Just $  mkTerm DB.zero Typ.aa [])
+    it "shifts DBs correctly" $
+      applyAbsToTerms t4 [t5,t6] `shouldBe` Just t7
+    it "does not affect dangling DBs" $
+      applyAbsToTerms t8 [t9] `shouldBe` Just t10
+      
 
 spec_discharge :: Spec
 spec_discharge =

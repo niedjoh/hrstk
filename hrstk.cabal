@@ -125,6 +125,7 @@ test-suite hrstk-test
     , RewritingSpec
     , CriticalPairsSpec
     , NCPOSpec
+    , StarCPOSpec
     , Properties
     , Predefined.Sort
     , Predefined.Typ

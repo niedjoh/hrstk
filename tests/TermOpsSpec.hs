@@ -104,12 +104,21 @@ spec_shiftDB =
                                                       , mkTerm DB.zero Typ.a []]
                                 , mkTerm DB.one Typ.a []
                                 ]
-        t2 = mkTerm Fun.c Typ.a [ mkTerm Var.x Typ.aa [ mkTerm DB.one Typ.a []
+        s1 = mkTerm Fun.c Typ.a [ mkTerm Var.x Typ.aa [ mkTerm DB.one Typ.a []
                                                       , mkTerm DB.zero Typ.a []]
                                 , mkTerm DB.zero Typ.a []
                                 ]
-    it "computes an example correctly" $
-      shiftDB (-1) t1 `shouldBe` t2
+        t2 = mkTerm Fun.f Typ.a [ mkTerm DB.one Typ.aa []
+                                , mkTerm Fun.g Typ.a [ mkTerm DB.zero Typ.a [] ]
+                                ]
+
+        s2 = mkTerm Fun.f Typ.a [ mkTerm DB.three Typ.aa []
+                                , mkTerm Fun.g Typ.a [ mkTerm DB.two Typ.a [] ]
+                                ]
+    it "computes negative shift correctly" $
+      shiftDB (-1) t1 `shouldBe` s1
+    it "computes positive shift correctly" $
+      shiftDB 2 t2 `shouldBe` s2
 
 spec_expandedTerm :: Spec
 spec_expandedTerm =

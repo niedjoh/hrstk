@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- |implementation of StarCPO
 module Termination.StarCPO.Ordering where
 
@@ -6,44 +8,48 @@ import Prelude hiding ((&&),(||),and,or,not)
 import Control.Monad (zipWithM)
 import Control.Monad.Reader (Reader,runReader,asks)
 import Data.List (permutations,delete)
-import Data.Set (Set)
-import qualified Data.Set as S
 import Language.Hasmtlib (Equatable(..),Orderable(..),Boolean(..),and,or,true,false,bool)
 
-import Utils.Type (Accessor(..),Var,Id)
-import Utils.Misc (allPossibilities)
+import Utils.Type (Accessor(..))
 import Utils.SMT (Constraint,(<&&>),(<&&),(<||>))
 import Typ.Type (Typ(..))
-import Typ.Ops (arity,returnTyp,returnSort,argTyps,equatableByTypApp,posOf)
+import Typ.Ops (arity,returnTyp,returnSort,argTyps,applyTyps)
 import Term.Type (Term(..),Head(..))
-import Term.Ops (hdToTerm,danglingDB,shiftDB,addLams)
+import Term.Ops (hdToTerm,shiftDB,addLams)
 import Subst.Ops (applyAbsToTerms)
-import Termination.NCPO.Type (CPOInfo(..),IsStatus(..))
+import Termination.StarCPO.Type (CPOInfo(..),IsStatus(..))
 
 type StatComp a b = [Term] -> [Term] -> Reader (CPOInfo a b) Constraint
-  
-star :: Term -> Maybe Term
-star s = case hd s of
-  F f -> Just s{hd = FStar f (length (sp s))}
-  _ -> Nothing
 
-pullDown :: [Typ] -> Term -> Term -> Term -- TODO test
-pullDown as u@(Term {typ = Typ bs _}) s = let
-  ss = [(shiftDB n sAux){nlams = n, typ = b} | b <- bs, let n = arity b]
-  sAux = s{nlams = 0, typ = returnTyp (typ s)}
+-- |Remove leading abstractions from term
+removeAbs :: Term -> Term
+removeAbs s = s{nlams = 0, typ = returnTyp (typ s)}
+
+-- |Given a starred non-abstraction s, adjust its type to a
+-- * via changing the type of the starred function symbol as well as
+-- * eta expansion.
+adjustType :: Term -> Typ -> Term
+adjustType s a = sShifted{nlams = n, typ = a, sp = sp sShifted ++ dbs} where
+  n = arity a
+  dbs = [hdToTerm b (DB $ n-i-1) | (b,i) <- zip (argTyps a) [0..]]
+  sShifted = shiftDB n s
+
+-- |Pull down u by applying it to appropriately typed versions of the starred term s
+-- * and put it into the abstractions according to s
+pullDown :: Term -> Term -> Term
+pullDown u@(Term {typ = Typ bs _}) s = let
+  ss = [adjustType s' b | b <- bs]
+  s' = removeAbs s
   in case applyAbsToTerms u ss of
-    Just v -> v{nlams = length as, typ = Typ as (returnSort (typ v))}
+    Just v -> v{nlams = nlams s, typ = Typ (argTyps (typ s)) (returnSort (typ v))}
     Nothing -> error "impossible case"
 
-extend :: Term -> Term -> Term -- TODO test
-extend s u
-  | n >= k = sAux'{nlams = n, typ = typ u, sp = sp sAux' ++ [hdToTerm a (DB $ n-k-i) | (a,i) <- zip (drop k (argTyps (typ u))) [0..]]}
-  | otherwise = error "impossible case"
-  where
-    sAux' = (shiftDB (n-k) sAux)
-    sAux = s{nlams = 0, typ = returnTyp (typ s)}
-    k = nlams s
-    n = nlams u
+-- |Given a starred term s = x_k.f*(s_n) and a type a which is an extension of the type of s,
+-- extend s to x_k,y_l.f*(s_n,y_l)
+extend :: Term -> Typ -> Term
+extend s a = case applyTyps a (argTyps (typ s)) of
+  Just b -> (adjustType (removeAbs s) b){nlams = arity a, typ = a}
+  Nothing -> error "impossible case "
 
 -- |A wrapper for StarCPO
 scpoWrapper :: (Orderable a, IsStatus b, Equatable b) => CPOInfo a b -> Term -> Term -> Constraint
@@ -54,9 +60,8 @@ scpoWeakWrapper cpoinfo s t = runReader (scpoWeak s t) cpoinfo
 
 -- |Implementation of StarCPO
 scpo :: (Orderable a, IsStatus b, Equatable b) => Term -> Term -> Reader (CPOInfo a b) Constraint
-scpo s t = case star s of
-  Just s' -> scpoWeak s' t
-  Nothing -> pure false
+scpo s@(Term {hd = F f}) t = scpoWeak s{hd = FStar f (length (sp s))} t
+scpo _ _ = pure false
 
 scpoWeak :: (Orderable a, IsStatus b, Equatable b) => Term -> Term -> Reader (CPOInfo a b) Constraint
 scpoWeak s@(Term {typ = Typ as a}) t@(Term {typ = Typ bs b})
@@ -66,23 +71,21 @@ scpoWeak s@(Term {typ = Typ as a}) t@(Term {typ = Typ bs b})
     sortPrec <- asks sPrec
     funPrec <- asks fPrec
     st <- asks stat
-    sortPrec ! a >=? sortPrec ! b <&& case hd s of
-      F f -> case hd t of
-        F g -> (funPrec ! f === funPrec ! g && st ! f === st ! g) <&& mulLex scpoGMulWeak scpoGLexWeak (st ! f) sps' spt' -- <Fun>
-        _ -> case star s of
-          Just s' -> scpoWeak s' t -- <Put>
-          Nothing -> error "impossible case"
-      FStar f n ->  or <$> traverse (\u -> scpoWeak (pullDown as u s) t) (sp s) <||> case hd t of -- <Select>
-        F g -> (funPrec ! f >? funPrec ! g <&& (and <$> traverse (\u -> scpoWeak (extend s u) u) (sp t))) <||> -- <Copy>
+    sortPrec ! a >=? sortPrec ! b <&&  case hd s of
+      F f -> scpoWeak s{hd = FStar f (length (sp s))} t <||> case hd t of -- <Put>
+          F g -> (funPrec ! f === funPrec ! g && st ! f === st ! g) <&& mulLex scpoGMulWeak scpoGLexWeak (st ! f) sps' spt' -- <Fun>
+          _ -> pure false
+      FStar f n -> (or <$> traverse (\u -> scpoWeak (absSubt $ pullDown u s) t) (sp s)) <||> case hd t of -- <Select>
+        F g -> (funPrec ! f >? funPrec ! g <&& (and <$> traverse (\u -> scpoWeak (extend s (typ u)) u) spt')) <||> -- <Copy>
                ((funPrec ! f === funPrec ! g && st ! f === st ! g) <&& -- <Stat>
-                (and <$> traverse (\u -> (scpoWeak (extend s u) u)) (sp t)) <&&> 
+                (and <$> traverse (\u -> (scpoWeak (extend s (typ u)) u)) spt') <&&> 
                 mulLex scpoGMul scpoGLex (st ! f) (take n sps') spt') 
         _ -> pure false
-      _ -> bool (hd s == hd t) <&& and <$> zipWithM scpoWeak sps' spt' -- <Var>
+      _ -> bool (hd s == hd t) <&& (and <$> zipWithM scpoWeak sps' spt') -- <Var>
   where
     sps' = (map absSubt (sp s))
     spt' = (map absSubt (sp t))
-    absSubt = addLams (argTyps . typ $ s)
+    absSubt = addLams as
 
 mulLex :: (Orderable a, IsStatus b, Equatable b) => StatComp a b -> StatComp a b -> b -> [Term] -> [Term] ->
            Reader (CPOInfo a b) Constraint
@@ -108,66 +111,9 @@ scpoGMul ss ts = go ts ss [] where
                     (or <$> traverse (\a -> scpo a u <&&> go us (delete a as) (a:bs)) as) <||>
                     (or <$> traverse (\a -> scpoWeak a u <&&> go us (delete a as) bs) as)
   go [] _ [] = pure false
-  go [] as bs = pure true
+  go [] _ _ = pure true
 
 scpoGMulWeak :: (Orderable a, IsStatus b, Equatable b) => [Term] -> [Term] -> Reader (CPOInfo a b) Constraint
 scpoGMulWeak ss ts
   | length ss == length ts = or <$> traverse (\ss' -> and <$> zipWithM scpoWeak ss' ts) (permutations ss)
   | otherwise              = pure false
-
-{-
-
--- |The two arguments are connected by the composition of the following relations:
--- * reflexive closure of basic subterm relation
--- * reflexive closure of accessibility relation
--- * weak orient with NCPO
---
--- Note that we only allow to proceed to subterms via "nonversatile paths"
-bawo :: (Orderable a, IsStatus b, Equatable b) =>
-  Bool -> Term -> Term -> ReaderT (CPOInfo a b) FreshM Constraint
-bawo varRec s t = awo varRec s t <||> go s t where
-  varCond u = not . bool $ danglingDB u
-  go u@(Term {hd = F _, typ = Typ _ a}) v = do
-      basic <- asks isBasic
-      let u' = u{nlams = 0, typ = Typ [] a}
-      ((basic ! a && varCond v) <&& awo varRec u' v) <||> (or <$> traverse (\w -> go w v) (sp u))
-  go _ _ = pure false
-
--- |accessibility subterm relation with generic compare function for base case
-accSubt :: CompareFun a b -> Term -> Term -> ReaderT (CPOInfo a b) FreshM Constraint
-accSubt comp s@(Term {hd = F f}) t = do
-  acc <- asks isAccessible
-  or <$> traverse (\(u,i) -> acc ! (f,i) <&& (comp u t <||> accSubt comp u t))  (zip (sp s) [0..])
-accSubt _ _ _ = pure false
-
--- |The two arguments are connected by the composition of the following relations:
--- * reflexive closure of accessibility relation
--- * weak orient with NCPO
---
--- Note that we only allow to proceed to subterms for applied function symbols
-awo :: (Orderable a, IsStatus b, Equatable b) =>
-  Bool -> Term -> Term -> ReaderT (CPOInfo a b) FreshM Constraint
-awo varRec s t =
-  ncpoWeak varRec Compare S.empty s t <||> accSubt (ncpoWeak varRec Compare S.empty) s t
-
--- |structurally smaller + orient with variable set reset
-sso :: (Orderable a, IsStatus b, Equatable b) =>
-  Bool -> Set (Var,Typ) -> Term -> Term -> ReaderT (CPOInfo a b) FreshM Constraint
-sso varRec vars s@(Term {typ = Typ [] a}) t =
-  ncpo varRec Compare S.empty s t <||> accSubt comp s t where
-    comp u _ = case equatableByTypApp (typ s) (typ u) of
-        Nothing -> pure false
-        Just cs -> do
-          let candidateVars = [filter ((== c) . snd) (S.toList vars) | c <- cs]
-          if [] `elem` candidateVars || any (\c -> bool $ posOf a c /= S.empty) cs
-            then pure false
-            else do
-              let possibleVarLists = allPossibilities candidateVars
-                  toTerm (x,c) = hdToTerm c (FV x)
-                  f xs = case applyAbsToTerms u (map toTerm xs) of
-                    Just uxs -> pure . bool $ uxs == t
-                    Nothing -> pure false
-              or <$> traverse f possibleVarLists
-sso varRec _ s t = ncpo varRec Compare S.empty s t
-
--}

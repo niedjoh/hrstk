@@ -42,7 +42,7 @@ instance Pretty Term where
     prettyHd (DB i) ctx
       | i < 0          = error "negative DB"
       | i < length ctx = ctx !! i
-      | otherwise      = error "dangling DB"
+      | otherwise      = pretty i -- error "dangling DB"
     prettyAbs k vars
       | k > 0     = hcat (punctuate comma vars)  <> "."
       | otherwise = emptyDoc
