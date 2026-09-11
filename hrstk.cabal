@@ -30,6 +30,8 @@ executable hrstk
      , text
      , time
      , transformers ^>= 0.6.1.2
+     , hasmtlib
+     , containers
   hs-source-dirs:   app
   default-language: Haskell2010
 
@@ -85,6 +87,7 @@ library hrstk-lib
     , Termination.Poly.Type
     , Termination.Poly.Interpretation
     , Termination.Poly.Solver
+    , Termination.AFP.Solver
     , Confluence
     , TPTP
     , TPTP.Parse
@@ -132,6 +135,7 @@ test-suite hrstk-test
     , Predefined.DB
     , Predefined.Var
     , Predefined.Fun
+    , AfpSpec
   hs-source-dirs: tests
   build-depends:
       base >= 4.18
@@ -146,5 +150,6 @@ test-suite hrstk-test
     , tasty-hedgehog
     , tasty-hspec
     , transformers ^>= 0.6.1.2
+    , text
   default-language: Haskell2010
   ghc-options: -main-is Test -Wall

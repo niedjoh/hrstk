@@ -1,0 +1,8 @@
+(format higher-order)
+(sort O)
+(fun f (-> (-> (-> O O) O) O))
+
+(rule 
+  (f (lambda ((h (-> O O))) (h (F h)))) 
+  (F (lambda ((x O)) (f (lambda ((h (-> O O))) (h (F h))))))
+)

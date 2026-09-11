@@ -1,0 +1,7 @@
+(format higher-order)
+(sort real)
+(fun sin (-> real real))
+(fun cos (-> real real))
+(fun times (-> real real real))
+(fun deriv (-> (-> real real) real real))
+(rule (deriv (lambda ((x0 real)) (sin (F x0))) ?0) (times (deriv (lambda ((x0 real)) (F ?0)) ?0) (cos (F ?0))))

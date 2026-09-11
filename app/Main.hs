@@ -53,6 +53,7 @@ import qualified Termination.StarCPO.Solver as StarCPO
 import Confluence
 import qualified TPTP
 import qualified ARI
+import Termination.AFP.Solver
 
 data InputFormat = ARI | TPTP
 
@@ -164,6 +165,8 @@ termination mtm s v d bts fTyM hrs = let
       else do
         putStrLn "MAYBE"
         when v . printES "input HRS:" $ hrs
+    iob <- (checkAFP s bts hrs)
+    putStrLn $ "\n\nIs AFP: " ++ show iob
     when v . putDoc $ terminationResultDoc res
 
 confluence :: Maybe ConfMethod -> Int -> SMTSolver -> Bool -> Bool -> [Sort] -> FunTypMap -> ES -> IO ()

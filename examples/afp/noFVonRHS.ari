@@ -1,0 +1,5 @@
+(format higher-order)
+(sort O)
+(fun ap (-> O O O))
+(fun lm (-> (-> O O) O))
+(rule (ap (lm (lambda ((x0 O)) (F x0))) ?0) ?0)
