@@ -54,6 +54,7 @@ import Confluence
 import qualified TPTP
 import qualified ARI
 import Termination.AFP.Solver
+import Termination.DPStatic.Solver(runProcessors)
 
 data InputFormat = ARI | TPTP
 
@@ -158,10 +159,11 @@ termination mtm s v d bts fTyM hrs = let
     Nothing -> terminationStrategy [NCPO,Poly]
   in do
     iob <- (checkAFP s bts hrs)
-    if iob && runProcessors hrs
+    processorBool <- runProcessors hrs
+    if iob && processorBool
       then do
         putStrLn "YES"
-        when v . printES "input HRS:" $ hrs
+        return ()
       else do
         res  <- termFun s d bts fTyM hrs
         if terminationStatus res
@@ -171,9 +173,8 @@ termination mtm s v d bts fTyM hrs = let
           else do
             putStrLn "MAYBE"
             when v . printES "input HRS:" $ hrs
-    iob <- (checkAFP s bts hrs)
-    putStrLn $ "\n\nIs AFP: " ++ show iob
-    when v . putDoc $ terminationResultDoc res
+        putStrLn $ "\n\nIs AFP: " ++ show iob
+        when v . putDoc $ terminationResultDoc res
 
 confluence :: Maybe ConfMethod -> Int -> SMTSolver -> Bool -> Bool -> [Sort] -> FunTypMap -> ES -> IO ()
 confluence mcm n s v d bts fTyM dprs = case evalState (runMaybeT $ CP.criticalPairs dprs dprs) n of
