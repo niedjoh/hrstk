@@ -157,14 +157,20 @@ termination mtm s v d bts fTyM hrs = let
     Just tm -> checkTermination tm
     Nothing -> terminationStrategy [NCPO,Poly]
   in do
-    res  <- termFun s d bts fTyM hrs
-    if terminationStatus res
+    iob <- (checkAFP s bts hrs)
+    if iob && runProcessors hrs
       then do
         putStrLn "YES"
         when v . printES "input HRS:" $ hrs
       else do
-        putStrLn "MAYBE"
-        when v . printES "input HRS:" $ hrs
+        res  <- termFun s d bts fTyM hrs
+        if terminationStatus res
+          then do
+            putStrLn "YES"
+            when v . printES "input HRS:" $ hrs
+          else do
+            putStrLn "MAYBE"
+            when v . printES "input HRS:" $ hrs
     iob <- (checkAFP s bts hrs)
     putStrLn $ "\n\nIs AFP: " ++ show iob
     when v . putDoc $ terminationResultDoc res
