@@ -88,6 +88,7 @@ library hrstk-lib
     , Termination.Poly.Interpretation
     , Termination.Poly.Solver
     , Termination.AFP.Solver
+    , Termination.DPStatic.Solver
     , Confluence
     , TPTP
     , TPTP.Parse
@@ -136,6 +137,7 @@ test-suite hrstk-test
     , Predefined.Var
     , Predefined.Fun
     , AfpSpec
+    , DPSpec
   hs-source-dirs: tests
   build-depends:
       base >= 4.18

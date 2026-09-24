@@ -34,7 +34,8 @@ spec_Afp =
        , ("./examples/afp/example8.ari", True)
        , ("./examples/afp/example17.ari", True)
        , ("./examples/afp/noFVonRHS.ari", True)
-       , ("./examples/afp/notAFP2.ari", False)]
+       , ("./examples/afp/notAFP2.ari", False)
+       , ("./examples/afp/notAFP3.ari", False)]
 
   forM_ testCases $ \(path, expected) -> 
     it ("computes " ++ path ++ " correctly") $ do

@@ -15,6 +15,7 @@ import NCPOSpec (ncpoSpecs)
 import StarCPOSpec (scpoSpecs)
 import Properties (props)
 import AfpSpec (afpSpecs)
+import DPSpec (dpSpecs)
 
 main :: IO ()
 main = do
@@ -29,6 +30,7 @@ main = do
                                      , ncpoSpecs
                                      , scpoSpecs
                                      , afpSpecs
+                                     , dpSpecs
                                      ]
   defaultMain $ testGroup "All Tests" [ testGroup "Specs" specs
                                       , testGroup "Properties" props]

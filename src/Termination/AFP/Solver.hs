@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DataKinds #-} -- added
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Termination.AFP.Solver where
@@ -11,10 +11,11 @@ import qualified Data.Set as Set
 import Utils.Type
 import Typ.Ops
 import Term.Ops
-import Typ.Type -- Removed brackets here
-import Term.Type  -- Removed brackets here
+import Typ.Type
+import Term.Type
 import Utils.SMT (SMTSolver(Solver),z3,cvc5,yices, Constraint, IntExpr, smtVarMap)
 import Equation.Type
+import Equation.Ops
 
 data AFPInfo = AFPInfo
   { sPrec :: M.Map Id IntExpr -- Maps each Sort (Id) to an SMT integer weight
@@ -28,7 +29,10 @@ gtSort env iota kappa = (sPrec env M.! iota) SMT.>? (sPrec env M.! kappa)
 
 -- The top-level solver execution
 checkAFP :: SMTSolver -> [Sort] -> ES -> IO Bool
-checkAFP (Solver _ s _) allSorts hrs = do
+checkAFP (Solver _ s _) allSorts hrs
+ -- TODO: Change when we have better definition
+ | not ((all patternRule hrs)) = return False
+ | otherwise = do
   (res, _) <- SMT.solveWith (SMT.solver s) $ do
     -- 1. Initialize variables for every sort
     sortPrecedence <- smtVarMap @SMT.IntSort allSorts
@@ -43,17 +47,13 @@ checkAFP (Solver _ s _) allSorts hrs = do
   return (res == SMT.Sat)
 
 
---  Equation has the form Equation {lhs :: Term, rhs :: Term, isRule :: Bool}
 afpRule :: AFPInfo -> Equation -> Constraint
 afpRule env (Equation {lhs = l, rhs = r}) = 
     let 
-        -- 1. Extract the free monadic variables Z from the RHS (assuming fmv returns a Set Head)
         zs = Set.toList (freeVars r) 
-        
-        -- 2. Extract the arguments l_1 ... l_n from the LHS spine
         lhsArgs = sp l
         
-        -- 3. Generates the existential constraint for a single Z
+        -- Generates the existential constraint for a single Z
         constraintForZ :: Var -> Constraint
         constraintForZ z = 
             let 
@@ -65,11 +65,10 @@ afpRule env (Equation {lhs = l, rhs = r}) =
                 accessibilityChecks = map (\(li, t) -> accessibleArguments env li t) validTargets
             in 
                 if null accessibilityChecks 
-                then SMT.false -- If Z isn't in the LHS at all, the rule is fundamentally invalid
+                then SMT.false
                 else SMT.or accessibilityChecks
                 
     in 
-        -- 4. ALL Z in FMV(r) must satisfy their existential constraint
         if null zs 
         then SMT.true 
         else SMT.and (map constraintForZ zs)
@@ -80,7 +79,7 @@ accessibleArguments env term@(Term {nlams = n, hd = h, sp = s, typ = ty}) t
     | term == t = SMT.true
     | n > 0     = accessibleArguments env (term { nlams = n - 1, typ = getBodyType ty }) t
     | isFV h || isFun h = 
-        let hdTyp = getHeadType term -- Reconstruct full type
+        let hdTyp = getHeadType term
             subs  = accSMT env h hdTyp
             
             -- Map the 1-based index 'i' to the 0-based spine 's', checking free variables
@@ -93,7 +92,6 @@ accessibleArguments env term@(Term {nlams = n, hd = h, sp = s, typ = ty}) t
             
             -- If the argument's sort constraint holds AND the recursive check holds, it's valid
             subConstraints = map (\(sub, cond) -> cond SMT.&& accessibleArguments env sub t) validSubs
-            
         in SMT.or subConstraints
     | otherwise = SMT.false
         
@@ -135,7 +133,7 @@ getHeadType term =
   in liftTyp spineTyps bodyTyp
 
 
--- | Recursively finds all subterms within a term that are headed by the target Z
+-- Recursively finds all subterms within a term that are headed by the target Z
 findSubtermsWithHead :: Head -> Term -> [Term]
 findSubtermsWithHead z term@(Term {hd = h, sp = spine}) = 
     let current  = if h == z then [term] else []
