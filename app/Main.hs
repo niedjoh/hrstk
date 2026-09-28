@@ -159,7 +159,7 @@ termination mtm s v d bts fTyM hrs = let
     Nothing -> terminationStrategy [NCPO,Poly]
   in do
     iob <- (checkAFP s bts hrs)
-    processorBool <- runProcessors hrs
+    processorBool <- runProcessors hrs s bts
     if iob && processorBool
       then do
         putStrLn "YES"

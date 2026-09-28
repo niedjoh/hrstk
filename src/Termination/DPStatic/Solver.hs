@@ -15,14 +15,12 @@ import Typ.Type
 import Term.Type
 import Utils.SMT (SMTSolver(Solver),z3,cvc5,yices, Constraint, IntExpr, smtVarMap)
 import Equation.Type
-import qualified Data.Set as Set
-import qualified Data.Map as Map
 import Utils.FreshMonad (MonadFresh, freshVar)
-import Control.Monad (forM)
+import Control.Monad (forM, forM_)
 import Control.Monad.State (evalState)
 import Data.Graph (SCC(..), stronglyConnComp)
 import Data.List.NonEmpty (toList)
-import Data.Bool (Bool)
+import Termination.AFP.Solver
 
 data Candidate = Candidate {term :: Term, condition :: [(Head,Int)]} deriving (Ord, Eq, Show)
 data SDP = SDP {rule :: Equation, sdpCondition :: [(Head,Int)]} deriving (Eq, Show)
@@ -39,19 +37,26 @@ data ProcResult
 definedSymbols :: ES -> Set.Set Head
 definedSymbols es  = Set.fromList $ map (\eq -> hd $ lhs eq) es
 
-buildMinarMap :: ES -> Map.Map Head Int
-buildMinarMap es = Map.fromList 
+allHeadSymbols :: ES -> Set.Set Head
+allHeadSymbols es = Set.fromList $ concatMap (\Equation{lhs = l, rhs = r} -> [hd $ l, hd $ r]) es
+
+buildMinarMap :: ES -> M.Map Head Int
+buildMinarMap es = M.fromList 
     [ (hd leftSide, length (sp leftSide)) | eq <- es, let leftSide = lhs eq ]
+
+buildMinarMapAll :: ES -> M.Map Head Int
+buildMinarMapAll es = M.fromList 
+    [ (hd side, length (sp side)) | let sides = concatMap (\Equation{lhs = l, rhs = r} -> [l,r]) es, side <- sides]
 
 stripArgs :: Int -> Typ -> Typ
 stripArgs n (Typ as b) = Typ (drop n as) b
 
-candidates :: Term -> [(Head,Int)] -> Map.Map Head Int -> Set.Set Head -> [Candidate]
+candidates :: Term -> [(Head,Int)] -> M.Map Head Int -> Set.Set Head -> [Candidate]
 candidates term@(Term{nlams = n}) args minarMap definedSymbols
  | n > 0 = candidates (term{nlams = 0, typ = stripArgs n (typ term)}) args minarMap definedSymbols
  | (hd term) `Set.member` definedSymbols = 
       let 
-          k = Map.findWithDefault 0 (hd term) minarMap 
+          k = M.findWithDefault 0 (hd term) minarMap 
           truncatedSpine = take k (sp term)
           truncatedTerm = term{sp = truncatedSpine}
       in (Candidate truncatedTerm args) : concatMap (\x -> candidates x args minarMap definedSymbols) (sp term)
@@ -130,11 +135,120 @@ nonTrivialSCCs sdps =
 dependencyGraphProcessor :: DPProblem -> ProcResult
 dependencyGraphProcessor prob@(DPProblem{dprules = dp}) = Problems [ prob{dprules = cycle}| cycle <- nonTrivialSCCs dp]
 
-runProcessors :: ES -> IO Bool
-runProcessors es = do
-  let sdp = runStaticDependencyPairs es
-  let dpProblem =  DPProblem{dprules = sdp, rules = es, mflag = (Computable es), fflag = Formative}
-  let Problems cycles = dependencyGraphProcessor dpProblem
-  if null cycles
-    then return True
-    else return False
+runProcessors :: ES -> SMTSolver -> [Sort] -> IO Bool
+runProcessors es s allSorts = do
+  mPrec <- findSortOrdering s allSorts es
+  case mPrec of
+    Nothing   -> return False
+    Just prec -> do
+      let sdp = runStaticDependencyPairs es
+      let dpProblem =  DPProblem{dprules = sdp, rules = es, mflag = (Computable es), fflag = Formative}
+      let Problems cycles = dependencyGraphProcessor dpProblem
+      if null cycles
+        then return True
+        else processorLoop cycles s allSorts prec
+
+processorLoop :: [DPProblem] -> SMTSolver -> [Sort] -> M.Map Id Integer -> IO Bool
+processorLoop dpps s allSorts prec = do
+  computedProblems <- forM dpps $ \dpp -> do
+    cp <- computableSubtermProcessor s dpp allSorts prec
+    return cp
+  let filteredProblems = filter (\DPProblem{dprules = sdp} -> sdp /= []) computedProblems
+  if filteredProblems == dpps
+    then return False
+    else if null filteredProblems
+      then return True
+      else processorLoop filteredProblems s allSorts prec
+
+
+computableSubtermProcessor :: SMTSolver -> DPProblem -> [Sort] -> M.Map Id Integer -> IO DPProblem
+computableSubtermProcessor s prob@(DPProblem{dprules = dp, rules = rs}) allSorts prec = do
+  computedSDPs <- maximizeSolvedConstraints s rs (length dp) dp allSorts prec
+  return prob{dprules = computedSDPs}
+
+maximizeSolvedConstraints :: SMTSolver -> ES -> Int -> [SDP] -> [Sort] -> M.Map Id Integer -> IO [SDP]
+maximizeSolvedConstraints _ _ 0 sdps _ _ = return sdps
+maximizeSolvedConstraints solver@(Solver _ s _) rs k sdps allSorts prec = do
+  (res, model) <- SMT.solveWith (SMT.solver s) $ do
+    let dpRules = [r | SDP{rule = r} <- sdps]
+    let headSymbols = Set.toList $ allHeadSymbols dpRules
+    let minarMap = buildMinarMapAll dpRules
+    sortPrecedence <- smtVarMap @SMT.IntSort allSorts
+    forM_ (M.toList prec) $ \(so, v) ->
+      SMT.assert (sortPrecedence M.! so SMT.=== fromInteger v)
+    let env = AFPInfo { sPrec = sortPrecedence }
+    mapM_ (SMT.assert . afpRule env) rs
+    nuVars <- smtVarMap @SMT.BoolSort [ (f, i) | f <- headSymbols, i <- [0 .. (minarMap M.! f) - 1]]
+    forM_ headSymbols $ \f -> SMT.assert (exactlyOne [ nuVars M.! (f, i) | i <- [0 .. (minarMap M.! f) - 1] ])
+    flags <- forM sdps $ \SDP{rule = r} -> do
+      b <- SMT.var @SMT.BoolSort
+      SMT.assert (b SMT.==> projectionConstraint nuVars env (lhs r) (rhs r))
+      SMT.assert (SMT.not b SMT.==> projectionConstraintEqual nuVars env (lhs r) (rhs r))
+      return b
+
+    SMT.assert (sum [ SMT.ite b (1 :: IntExpr) 0 | b <- flags ] SMT.>=? fromIntegral k)
+    return flags
+
+  case (res, model) of
+    (SMT.Sat, Just bs) -> return [ dp | (dp, False) <- zip sdps bs ]
+    _                  -> maximizeSolvedConstraints solver rs (k - 1) sdps allSorts prec
+
+
+projectionConstraint :: M.Map (Head, Int) BoolExpr -> AFPInfo -> Term -> Term -> Constraint
+projectionConstraint pMap env s t = SMT.and [((pMap M.! (hd s,i)) SMT.&& (pMap M.! (hd t, j))) SMT.==> computableSubtermConstraint env (sp s !! i) (sp t !! j) | 
+  i <- [0 .. (length $ sp s) - 1], j <- [0 .. (length $ sp t) - 1]]
+
+projectionConstraintEqual :: M.Map (Head, Int) BoolExpr -> AFPInfo -> Term -> Term -> Constraint
+projectionConstraintEqual pMap env s t = SMT.and [((pMap M.! (hd s,i)) SMT.&& (pMap M.! (hd t, j))) SMT.==> SMT.bool (sp s !! i == sp t !! j) | 
+  i <- [0 .. (length $ sp s) - 1], j <- [0 .. (length $ sp t) - 1]]
+
+computableSubtermConstraint :: AFPInfo -> Term -> Term -> Constraint
+computableSubtermConstraint env s t
+  | s == t    = SMT.false
+  | not (sort (typ s) && sort (typ t)) = SMT.false
+  | otherwise = accessibleArguments env s t SMT.|| matchesViaMetaVarSMT env s t
+
+
+matchesViaMetaVarSMT :: AFPInfo -> Term -> Term -> Constraint
+matchesViaMetaVarSMT env s t = case hd t of 
+ FV z -> accessibleMetaVarOccurrence env s z
+ _ -> SMT.false
+ 
+
+accessibleMetaVarOccurrence :: AFPInfo -> Term -> Var -> Constraint
+accessibleMetaVarOccurrence env term@(Term {nlams = n, hd = h, sp = s, typ = ty}) z
+    | h == FV z = SMT.true   -- reached an occurrence of Z itself (whatever its own arguments happen to be)
+    | n > 0     = accessibleMetaVarOccurrence env (term { nlams = n - 1, typ = getBodyType ty }) z
+    | isFV h || isFun h =
+        let hdTyp = getHeadType term
+            subs  = accSMT env h hdTyp
+            validSubs = [ (s !! (i-1), accCond)
+                        | (i, accCond) <- subs
+                        , case h of
+                            FV v -> v `Set.notMember` freeVars (s !! (i-1))
+                            _    -> True ]
+            subConstraints = map (\(sub, cond) -> cond SMT.&& accessibleMetaVarOccurrence env sub z) validSubs
+        in SMT.or subConstraints
+    | otherwise = SMT.false
+
+
+findSortOrdering :: SMTSolver -> [Sort] -> ES -> IO (Maybe (M.Map Id Integer))
+findSortOrdering (Solver _ s _) allSorts rs = do
+  (res, msol) <- SMT.solveWith (SMT.solver s) $ do
+    sortPrecedence <- smtVarMap @SMT.IntSort allSorts
+    let env = AFPInfo { sPrec = sortPrecedence }
+    mapM_ (SMT.assert . afpRule env) rs
+    return sortPrecedence
+  return $ case res of
+    SMT.Sat -> msol
+    _       -> Nothing
+
+exactlyOne :: [Constraint] -> Constraint
+exactlyOne bs =
+  SMT.or bs SMT.&&
+  SMT.and [ SMT.not (a SMT.&& b)
+          | (a, i) <- zip bs [0 :: Int ..]
+          , (b, j) <- zip bs [0 ..]
+          , i < j ]
+
+type BoolExpr = SMT.Expr SMT.BoolSort

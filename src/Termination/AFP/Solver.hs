@@ -73,7 +73,7 @@ afpRule env (Equation {lhs = l, rhs = r}) =
         then SMT.true 
         else SMT.and (map constraintForZ zs)
 
--- Term has the form Term { nlams :: Int, hd :: Head, sp :: [Term], typ :: Typ
+
 accessibleArguments :: AFPInfo -> Term -> Term -> Constraint
 accessibleArguments env term@(Term {nlams = n, hd = h, sp = s, typ = ty}) t
     | term == t = SMT.true
