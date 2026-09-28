@@ -150,15 +150,12 @@ runProcessors es s allSorts = do
 
 processorLoop :: [DPProblem] -> SMTSolver -> [Sort] -> M.Map Id Integer -> IO Bool
 processorLoop dpps s allSorts prec = do
-  computedProblems <- forM dpps $ \dpp -> do
-    cp <- computableSubtermProcessor s dpp allSorts prec
-    return cp
-  let filteredProblems = filter (\DPProblem{dprules = sdp} -> sdp /= []) computedProblems
-  if filteredProblems == dpps
-    then return False
-    else if null filteredProblems
-      then return True
-      else processorLoop filteredProblems s allSorts prec
+  computed <- forM dpps $ \dpp -> computableSubtermProcessor s dpp allSorts prec
+  let resplit = [ p { dprules = c } | p <- computed, c <- nonTrivialSCCs (dprules p) ]
+      size ps = sum (map (length . dprules) ps)
+  if null resplit then return True
+  else if size resplit >= size dpps then return False
+  else processorLoop resplit s allSorts prec
 
 
 computableSubtermProcessor :: SMTSolver -> DPProblem -> [Sort] -> M.Map Id Integer -> IO DPProblem
