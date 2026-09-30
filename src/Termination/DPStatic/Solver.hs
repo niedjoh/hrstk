@@ -21,6 +21,14 @@ import Control.Monad.State (evalState)
 import Data.Graph (SCC(..), stronglyConnComp)
 import Data.List.NonEmpty (toList)
 import Termination.AFP.Solver
+import qualified Termination.StarCPO.Type as CPO
+import Termination.StarCPO.Ordering
+import Termination.StarCPO.Solver
+import qualified Termination.NCPO.Type as NCPOType
+import qualified Termination.NCPO.Ordering as NCPOOrdering
+import qualified Termination.NCPO.Solver as NCPOSolver
+
+
 
 data Candidate = Candidate {term :: Term, condition :: [(Head,Int)]} deriving (Ord, Eq, Show)
 data SDP = SDP {rule :: Equation, sdpCondition :: [(Head,Int)]} deriving (Eq, Show)
@@ -135,8 +143,8 @@ nonTrivialSCCs sdps =
 dependencyGraphProcessor :: DPProblem -> ProcResult
 dependencyGraphProcessor prob@(DPProblem{dprules = dp}) = Problems [ prob{dprules = cycle}| cycle <- nonTrivialSCCs dp]
 
-runProcessors :: ES -> SMTSolver -> [Sort] -> IO Bool
-runProcessors es s allSorts = do
+runProcessors :: ES -> SMTSolver -> [Sort] -> FunTypMap -> IO Bool
+runProcessors es s allSorts fTyM = do
   mPrec <- findSortOrdering s allSorts es
   case mPrec of
     Nothing   -> return False
@@ -146,16 +154,17 @@ runProcessors es s allSorts = do
       let Problems cycles = dependencyGraphProcessor dpProblem
       if null cycles
         then return True
-        else processorLoop cycles s allSorts prec
+        else processorLoop cycles s allSorts prec fTyM
 
-processorLoop :: [DPProblem] -> SMTSolver -> [Sort] -> M.Map Id Integer -> IO Bool
-processorLoop dpps s allSorts prec = do
+processorLoop :: [DPProblem] -> SMTSolver -> [Sort] -> M.Map Id Integer -> FunTypMap -> IO Bool
+processorLoop dpps s allSorts prec fTyM = do
   computed <- forM dpps $ \dpp -> computableSubtermProcessor s dpp allSorts prec
+  computed2 <- forM computed $ \dpp -> reductionTripleNCPOProcessor dpp s allSorts fTyM (length $ dprules dpp)
   let resplit = [ p { dprules = c } | p <- computed, c <- nonTrivialSCCs (dprules p) ]
       size ps = sum (map (length . dprules) ps)
   if null resplit then return True
   else if size resplit >= size dpps then return False
-  else processorLoop resplit s allSorts prec
+  else processorLoop resplit s allSorts prec fTyM
 
 
 computableSubtermProcessor :: SMTSolver -> DPProblem -> [Sort] -> M.Map Id Integer -> IO DPProblem
@@ -249,3 +258,80 @@ exactlyOne bs =
           , i < j ]
 
 type BoolExpr = SMT.Expr SMT.BoolSort
+
+getAllIdsOfTerm :: Term -> [Id]
+getAllIdsOfTerm (Term{hd = F i, sp = s}) = i : concatMap getAllIdsOfTerm s
+getAllIdsOfTerm (Term{sp = s})           = concatMap getAllIdsOfTerm s
+
+getIDs :: ES -> [Id]
+getIDs es = Set.toList . Set.fromList $
+  concatMap (\Equation{lhs = l, rhs = r} -> getAllIdsOfTerm l ++ getAllIdsOfTerm r) es
+
+reductionTripleProcessor :: DPProblem -> SMTSolver -> [Sort] -> FunTypMap -> Int -> IO DPProblem
+reductionTripleProcessor dpp _ _ _ 0 = return dpp
+reductionTripleProcessor dpp@(DPProblem{dprules = dps}) solver@(Solver _ s _) allSorts fTyps k = do
+  let fs = getIDs $ rules dpp ++ [ r | SDP{rule = r} <- dps ]
+  let fTypsAll = markedTyps (rules dpp) fTyps
+  (res, model) <- SMT.solveWith (SMT.solver s) $ do
+    sortPrec   <- CPO.Prec  <$> smtVarMap @SMT.IntSort allSorts
+    basic      <- CPO.Basic <$> smtVarMap @SMT.BoolSort allSorts
+    st         <- CPO.Stat  <$> smtVarMap @SMT.BoolSort fs
+    funPrec    <- CPO.Prec  <$> smtVarMap @SMT.IntSort fs
+    accessible <- CPO.Acc   <$> smtVarMap @SMT.BoolSort
+                    [ (f,i) | f <- fs, i <- [0 .. arity (fTypsAll M.! f) - 1] ]
+    let cpoinfo = CPO.CPOInfo { CPO.sorts = allSorts, CPO.sPrec = sortPrec, CPO.stat = st
+                          , CPO.fPrec = funPrec, CPO.isBasic = basic, CPO.isAccessible = accessible }
+    mapM_ (SMT.assert . basicCond cpoinfo fs fTypsAll) allSorts
+    mapM_ SMT.assert [ accessibleCond cpoinfo f i a b
+                     | f <- fs, Typ as b <- [fTypsAll M.! f], (a,i) <- zip as [0..] ]
+    forM_ [ r | r@Equation{isRule = True} <- rules dpp ] $ \r ->
+      SMT.assert (scpoWeakWrapper cpoinfo (lhs r) (rhs r))
+    flags <- forM dps $ \SDP{rule = r} -> do
+      b <- SMT.var @SMT.BoolSort
+      SMT.assert (scpoWeakWrapper cpoinfo (lhs r) (rhs r))
+      SMT.assert (b SMT.==> scpoWrapper cpoinfo (lhs r) (rhs r))
+      return b
+    SMT.assert (sum [ SMT.ite b (1 :: IntExpr) 0 | b <- flags ] SMT.>=? fromIntegral k)
+    return flags
+  case (res, model) of
+    (SMT.Sat, Just bs) -> return dpp { dprules = [ dp | (dp, False) <- zip dps bs ] }
+    _                  -> reductionTripleProcessor dpp solver allSorts fTyps 1
+
+
+markedTyps :: ES -> FunTypMap -> FunTypMap
+markedTyps es fTyps = M.union fTyps $ M.fromList
+  [ (Id (t <> "#"), ty)
+  | F (Id t) <- Set.toList (definedSymbols es)
+  , Just ty <- [M.lookup (Id t) fTyps] ]
+
+
+reductionTripleNCPOProcessor :: DPProblem -> SMTSolver -> [Sort] -> FunTypMap -> Int -> IO DPProblem
+reductionTripleNCPOProcessor dpp _ _ _ 0 = return dpp
+reductionTripleNCPOProcessor dpp@(DPProblem{dprules = dps}) solver@(Solver _ s _) allSorts fTyps k = do
+  let fs = getIDs $ rules dpp ++ [ r | SDP{rule = r} <- dps ]
+  let fTypsAll = markedTyps (rules dpp) fTyps
+  (res, model) <- SMT.solveWith (SMT.solver s) $ do
+    sortPrec   <- NCPOType.Prec  <$> smtVarMap @SMT.IntSort allSorts
+    basic      <- NCPOType.Basic <$> smtVarMap @SMT.BoolSort allSorts
+    st         <- NCPOType.Stat  <$> smtVarMap @SMT.BoolSort fs
+    funPrec    <- NCPOType.Prec  <$> smtVarMap @SMT.IntSort fs
+    accessible <- NCPOType.Acc   <$> smtVarMap @SMT.BoolSort
+                    [ (f,i) | f <- fs, i <- [0 .. arity (fTypsAll M.! f) - 1] ]
+    let cpoinfo = NCPOType.CPOInfo { NCPOType.sorts = allSorts, NCPOType.sPrec = sortPrec, NCPOType.stat = st
+                          , NCPOType.fPrec = funPrec, NCPOType.isBasic = basic, NCPOType.isAccessible = accessible }
+    mapM_ (SMT.assert . NCPOSolver.basicCond cpoinfo fs fTypsAll) allSorts
+    mapM_ SMT.assert [ NCPOSolver.accessibleCond cpoinfo f i a b
+                     | f <- fs, Typ as b <- [fTypsAll M.! f], (a,i) <- zip as [0..] ]
+    forM_ [ r | r@Equation{isRule = True} <- rules dpp ] $ \r ->
+      SMT.assert $ evalState (NCPOOrdering.ncpoWeakWrapper cpoinfo (lhs r) (rhs r)) 0
+    flags <- forM dps $ \SDP{rule = r} -> do
+      b <- SMT.var @SMT.BoolSort
+      SMT.assert $ evalState (NCPOOrdering.ncpoWeakWrapper cpoinfo (lhs r) (rhs r)) 0
+      let strictC = evalState (NCPOOrdering.ncpoWrapper cpoinfo (lhs r) (rhs r)) 0
+      SMT.assert $ (b SMT.==> strictC)
+      return b
+    SMT.assert (sum [ SMT.ite b (1 :: IntExpr) 0 | b <- flags ] SMT.>=? fromIntegral k)
+    return flags
+  case (res, model) of
+    (SMT.Sat, Just bs) -> return dpp { dprules = [ dp | (dp, False) <- zip dps bs ] }
+    _                  -> reductionTripleProcessor dpp solver allSorts fTyps (k-1)

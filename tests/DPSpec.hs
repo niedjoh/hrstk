@@ -3,7 +3,7 @@
 module DPSpec(dpSpecs) where
 
 import qualified Data.Text.IO as TIO
-import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe, runIO)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe, runIO, expectationFailure)
 import qualified ARI
 import Equation.Type
 import Term.Type
@@ -88,6 +88,30 @@ spec_Graph = describe "Dependency Graph Unit Tests" $ do
             computedSCCs `shouldBe` example_47_scc
 
 
+spec_Example62 :: Spec
+spec_Example62 = describe "Example 62 (map, subterm criterion)" $ do
+  (hrs, sorts) <- runIO $ do
+    (_, sorts, _, _, _, hrs, _) <- parseFileForTest "./examples/afp/example6_2.ari"
+    return (hrs, sorts)
+
+  let sdps    = runStaticDependencyPairs hrs
+      initial = DPProblem { dprules = sdps, rules = hrs
+                          , mflag = Computable hrs, fflag = Formative }
+
+  it "graph processor leaves exactly one problem with one DP" $
+    case dependencyGraphProcessor initial of
+      Problems [p] -> map (hd . lhs . rule) (dprules p) `shouldBe` [F (Id "map#")]
+      _            -> expectationFailure "expected exactly one sub-problem"
+
+  it "subterm criterion removes that DP" $ do
+    Just prec <- findSortOrdering z3 sorts hrs
+    case dependencyGraphProcessor initial of
+      Problems [p] -> do
+        p' <- computableSubtermProcessor z3 p sorts prec
+        dprules p' `shouldBe` []
+      _ -> expectationFailure "expected exactly one sub-problem"
+
+
 
 dpSpecs :: Spec
 dpSpecs = describe "DP" $ do
@@ -95,3 +119,4 @@ dpSpecs = describe "DP" $ do
   spec_Metafy
   spec_SDP
   spec_Graph
+  spec_Example62

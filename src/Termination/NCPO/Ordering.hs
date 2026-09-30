@@ -37,6 +37,10 @@ ncpoWrapper :: (Orderable a, IsStatus b, Equatable b) => CPOInfo a b -> Term -> 
   FreshM Constraint
 ncpoWrapper cpoinfo s t = runReaderT (ncpo False Compare S.empty s t) cpoinfo
 
+ncpoWeakWrapper :: (Orderable a, IsStatus b, Equatable b) => CPOInfo a b -> Term -> Term ->
+  FreshM Constraint
+ncpoWeakWrapper cpoinfo s t = runReaderT (ncpoWeak False Compare S.empty s t) cpoinfo
+
 -- |Implementation of NCPO
 ncpo :: (Orderable a, IsStatus b, Equatable b) =>
   Bool -> TypeComparison -> Set (Var,Typ) -> Term -> Term -> ReaderT (CPOInfo a b) FreshM Constraint
