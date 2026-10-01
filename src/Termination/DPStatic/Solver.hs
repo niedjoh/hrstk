@@ -158,8 +158,8 @@ runProcessors es s allSorts fTyM = do
 
 processorLoop :: [DPProblem] -> SMTSolver -> [Sort] -> M.Map Id Integer -> FunTypMap -> IO Bool
 processorLoop dpps s allSorts prec fTyM = do
-  computed <- forM dpps $ \dpp -> computableSubtermProcessor s dpp allSorts prec
-  computed2 <- forM computed $ \dpp -> reductionTripleNCPOProcessor dpp s allSorts fTyM (length $ dprules dpp)
+  --computed <- forM dpps $ \dpp -> computableSubtermProcessor s dpp allSorts prec
+  computed2 <- forM dpps $ \dpp -> reductionTripleNCPOProcessor dpp s allSorts fTyM (length $ dprules dpp)
   let resplit = [ p { dprules = c } | p <- computed2, c <- nonTrivialSCCs (dprules p) ]
       size ps = sum (map (length . dprules) ps)
   if null resplit then return True
