@@ -295,7 +295,8 @@ reductionTripleProcessor dpp@(DPProblem{dprules = dps}) solver@(Solver _ s _) al
     return flags
   case (res, model) of
     (SMT.Sat, Just bs) -> return dpp { dprules = [ dp | (dp, False) <- zip dps bs ] }
-    _                  -> reductionTripleProcessor dpp solver allSorts fTyps 1
+    _                  -> reductionTripleProcessor dpp solver allSorts fTyps m
+ where m = if k == 1 then 0 else (k-1)
 
 
 markedTyps :: ES -> FunTypMap -> FunTypMap
@@ -326,12 +327,14 @@ reductionTripleNCPOProcessor dpp@(DPProblem{dprules = dps}) solver@(Solver _ s _
       SMT.assert $ evalState (NCPOOrdering.ncpoWeakWrapper cpoinfo (lhs r) (rhs r)) 0
     flags <- forM dps $ \SDP{rule = r} -> do
       b <- SMT.var @SMT.BoolSort
-      SMT.assert $ evalState (NCPOOrdering.ncpoWeakWrapper cpoinfo (lhs r) (rhs r)) 0
       let strictC = evalState (NCPOOrdering.ncpoWrapper cpoinfo (lhs r) (rhs r)) 0
       SMT.assert $ (b SMT.==> strictC)
+      SMT.assert $ (SMT.not b SMT.==> SMT.bool (lhs r == rhs r))
       return b
     SMT.assert (sum [ SMT.ite b (1 :: IntExpr) 0 | b <- flags ] SMT.>=? fromIntegral k)
     return flags
   case (res, model) of
     (SMT.Sat, Just bs) -> return dpp { dprules = [ dp | (dp, False) <- zip dps bs ] }
-    _                  -> reductionTripleProcessor dpp solver allSorts fTyps (k-1)
+    _                  -> reductionTripleNCPOProcessor dpp solver allSorts fTyps m
+
+ where m = if k == 1 then 0 else 1
