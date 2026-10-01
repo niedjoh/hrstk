@@ -160,7 +160,7 @@ processorLoop :: [DPProblem] -> SMTSolver -> [Sort] -> M.Map Id Integer -> FunTy
 processorLoop dpps s allSorts prec fTyM = do
   computed <- forM dpps $ \dpp -> computableSubtermProcessor s dpp allSorts prec
   computed2 <- forM computed $ \dpp -> reductionTripleNCPOProcessor dpp s allSorts fTyM (length $ dprules dpp)
-  let resplit = [ p { dprules = c } | p <- computed, c <- nonTrivialSCCs (dprules p) ]
+  let resplit = [ p { dprules = c } | p <- computed2, c <- nonTrivialSCCs (dprules p) ]
       size ps = sum (map (length . dprules) ps)
   if null resplit then return True
   else if size resplit >= size dpps then return False
