@@ -185,3 +185,161 @@ sso varRec vars s@(Term {typ = Typ [] a}) t =
                     Nothing -> pure false
               or <$> traverse f possibleVarLists
 sso varRec _ s t = ncpo varRec Compare S.empty s t
+
+
+{-
+#################################################################################################################
+#################################################################################################################
+#################################################################################################################
+#################################################################################################################
+#################################################################################################################
+-}
+
+
+ncpoWrapperFilter :: (Orderable a, IsStatus b, Equatable b) => CPOInfoFilter a b -> Term -> Term ->
+  FreshM Constraint
+ncpoWrapper cpoinfoFilter s t = runReaderT (ncpo False Compare S.empty s t) cpoinfoFilter
+
+ncpoWeakWrapperFilter :: (Orderable a, IsStatus b, Equatable b) => CPOInfoFilter a b -> Term -> Term ->
+  FreshM Constraint
+ncpoWeakWrapper cpoinfoFilter s t = runReaderT (ncpoWeak False Compare S.empty s t) cpoinfoFilter
+
+
+
+ncpoFilter :: (Orderable a, IsStatus b, Equatable b) =>
+  Bool -> TypeComparison -> Set (Var,Typ) -> Term -> Term -> ReaderT (CPOInfoFilter a b) FreshM Constraint
+ncpo varRec typeComp vars s@(Term {typ = Typ [] _}) t = do
+  --This line stays the same
+  ifCompare typeComp (weakTypeOrder (typ s) (typ t)) (pure true) <&&> case hd s of
+    -- This line stays the same
+    F f -> if any (== t) (S.map (\(v,c) -> hdToTerm c (FV v)) vars)
+      then pure true
+      else or <$> traverse (\u -> bawo varRec u t) (sp s) <||> case typ t of
+        Typ (b:_) _ -> do
+          z <- lift freshVar
+          ncpo varRec NoCompare (S.insert (z,b) vars) s (applyAbsToVar t z)
+        Typ [] c -> case hd t of
+          F g -> funFunCase varRec vars s f g (sp s) (sp t)
+          FV var -> if varRec
+            then pure false
+            else ncpo True NoCompare vars s (hdToTerm (Typ (map typ $ sp t) c) (FV var)) <&&>
+                 (and <$> traverse (ncpo False NoCompare vars s) (sp t))
+          _ -> error "impossible case"
+    _ -> pure false
+ncpo varRec typeComp vars s@(Term {typ = Typ (a:_) _}) t =
+  ifCompare typeComp (weakTypeOrder (typ s) (typ t)) (pure true) <&&> do
+     z <- lift freshVar
+     let s' = applyAbsToVar s z
+         t' = applyAbsToVar t z
+     ncpoWeak varRec Compare vars s' t <||> case typ t of
+       Typ (b:_) _ -> if a == b
+         then ncpo varRec NoCompare vars s' t'
+         else ncpo varRec NoCompare vars s t'
+       _ -> ncpo varRec NoCompare vars s' t
+
+
+ncpoWeak :: (Orderable a, IsStatus b, Equatable b) =>
+ Bool -> TypeComparison  -> Set (Var,Typ) -> Term -> Term -> ReaderT (CPOInfo a b) FreshM Constraint
+ncpoWeak varRec typComp vars s t = if s == t
+  then pure true
+  else ncpo varRec typComp vars s t
+
+
+bawoFilter :: (Orderable a, IsStatus b, Equatable b) =>
+  Bool -> Term -> Term -> ReaderT (CPOInfoFilter a b) FreshM Constraint
+bawoFilter varRec s@(Term{hd = F f}) t = do
+  setMap <- asks filterSet
+  inMap <- asks filterIn
+  let setS = setMap ! f
+  SMT.ite setS 
+    (awo varRec s t <||> go s t) 
+    (SMT.or [inMap ! (f,i) SMT.&& (awoFilter varRec (sp s !! (i-1)) t SMT.|| go (sp s !! (i-1)) t) | i <- [1 .. length (sp s)]])
+ where
+  varCond u = not . bool $ danglingDB u
+  go u@(Term {hd = F _, typ = Typ _ a}) v = do
+      basic <- asks isBasic
+      let u' = u{nlams = 0, typ = Typ [] a}
+      ((basic ! a && varCond v) <&& awoFilter varRec u' v) <||> (or <$> traverse (\w -> go w v) (sp u))
+  go _ _ = pure false
+
+
+awo :: (Orderable a, IsStatus b, Equatable b) =>
+  Bool -> Term -> Term -> ReaderT (CPOInfoFilter a b) FreshM Constraint
+awo varRec s t =
+  ncpoWeakFilter varRec Compare S.empty s t <||> accSubt (ncpoWeakFilter varRec Compare S.empty) s t
+
+
+equalFilter :: (Orderable a, IsStatus b, Equatable b) =>
+ Term -> Term -> ReaderT (CPOInfoFilter a b) FreshM Constraint
+equalFilter s t = do
+  setMap <- asks filterSet
+  inMap <- asks filterIn
+  let n = length $ sp s
+  let m = length $ sp t
+
+  case (hd s, hd t) of
+
+    (F f, F g) | f == g -> do
+      const <- forM [1 .. n] $ \i -> do
+        recursive <- equalFilter (sp s !! (i-1)) (sp t !! (i-1))
+        return (inMap ! (f,i) SMT.&& recursive)
+      return (SMT.and const)
+
+    (F f, F g) -> do
+      let setS = setMap ! f
+      let setT = setMap ! g
+      fCollapse <- do 
+        const <- forM [1 .. n] $ \i -> do
+          recursive <- equalFilter (sp s !! (i-1)) t
+          return (inMap ! (f,i) SMT.&& recursive)
+        return (SMT.not setS SMT.&& SMT.or const)
+
+      gCollapse <- do 
+        const <- forM [1 .. m] $ \i -> do
+          recursive <- equalFilter s (sp t !! (i-1))
+          return (inMap ! (g,i) SMT.&& recursive)
+        return (SMT.not setT SMT.&& SMT.or const)
+
+      return (fCollapse SMT.|| gCollapse)
+
+    (F f, _) -> do
+      let setS = setMap ! f
+      const <- forM [1 .. n] $ \i -> do
+        recursive <- equalFilter (sp s !! (i-1)) t
+        return (inMap ! (f,i) SMT.&& recursive)
+      return (SMT.not setS SMT.&& SMT.or const)
+
+    (_, F g) -> do
+      let setT = setMap ! g
+      const <- forM [1 .. m] $ \i -> do
+        recursive <- equalFilter s (sp t !! (i-1))
+        return (inMap ! (g,i) SMT.&& recursive)
+      return (SMT.not setT SMT.&& SMT.or const)
+
+    (hs, ht)
+      | hs == ht -> do
+          if n /= m
+            then pure SMT.false
+            else do
+              eqs <- forM [1 .. n] $ \i ->
+                equalFilter (sp s !! (i-1)) (sp t !! (i-1))
+              pure (SMT.and eqs)
+      | otherwise -> pure SMT.false
+
+ncpoWeak :: (Orderable a, IsStatus b, Equatable b) =>
+ Bool -> TypeComparison  -> Set (Var,Typ) -> Term -> Term -> ReaderT (CPOInfo a b) FreshM Constraint
+ncpoWeak varRec typComp vars s t = case (hd s, hd t) of
+ (F f, F g) -> do
+  setMap <- asks filterSet
+  inMap <- asks filterIn
+  let setS = setMap ! f
+  let setT = setMap ! g
+  SMT.ite setS
+    (SMT.bool (f == g) SMT.&& SMT.or [inMap ! (f,i) SMT.&& (SMT.bool ((sp s !! (i-1)) == (sp t !! (i-1)))) | i <- [1 .. length (sp s)]])
+    (SMT.not setT SMT.&& SMT.or [inMap ! (f,i) SMT.&& inMap ! (g,j) SMT.&& (SMT.bool ((sp s !! (i-1)) == (sp t !! (j-1)))) | i <- [1 .. length (sp s)], j <- [1 .. length (sp t)]])
+  
+  
+  
+  if s == t
+  then pure true
+  else ncpoFilter varRec typComp vars s t
