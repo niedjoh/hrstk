@@ -113,3 +113,24 @@ type CPOSolution = ( SortPrecedence Integer
                    , Basic Bool
                    , Acc Bool
                    )                   
+
+
+
+
+
+--------
+
+
+data CPOInfoFilter a b = CPOInfoFilter { base :: CPOInfo a b
+                           , filterSet :: Basic Constraint
+                           , filterIn :: Acc Constraint
+                           }
+
+type CPOSolutionFilter = ( SortPrecedence Integer
+                   , Status ArgOrd
+                   , Precedence Integer
+                   , Basic Bool
+                   , Acc Bool
+                   , Basic Bool
+                   , Acc Bool
+                   ) 
