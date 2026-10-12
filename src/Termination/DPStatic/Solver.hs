@@ -154,7 +154,6 @@ runProcessors es s allSorts fTyM = do
       let Problems cycles = dependencyGraphProcessor dpProblem
       if null cycles
         then do
-          putStrLn "No Cycles"
           return True
         else processorLoop cycles s allSorts prec fTyM
 
