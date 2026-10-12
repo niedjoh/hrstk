@@ -160,23 +160,21 @@ termination mtm s v d bts fTyM hrs = let
   in do
     iob <- (checkAFP s bts hrs)
     processorBool <- runProcessors hrs s bts fTyM
-    --putStrLn $ "\n\nIs AFP: " ++ show iob
     if iob && processorBool
       then do
         putStrLn "YES"
         return ()
       else do
-        putStrLn "MAYBE"
-        --res  <- termFun s d bts fTyM hrs
-        --if terminationStatus res
-        --  then do
-        --    putStrLn "YES"
-        --    when v . printES "input HRS:" $ hrs
-        --  else do
-        --    putStrLn "MAYBE"
-        --    when v . printES "input HRS:" $ hrs
-        --putStrLn $ "\n\nIs AFP: " ++ show iob
-        --when v . putDoc $ terminationResultDoc res
+        res  <- termFun s d bts fTyM hrs
+        if terminationStatus res
+          then do
+            putStrLn "YES"
+            when v . printES "input HRS:" $ hrs
+          else do
+            putStrLn "MAYBE"
+            when v . printES "input HRS:" $ hrs
+        putStrLn $ "\n\nIs AFP: " ++ show iob
+        when v . putDoc $ terminationResultDoc res
 
 confluence :: Maybe ConfMethod -> Int -> SMTSolver -> Bool -> Bool -> [Sort] -> FunTypMap -> ES -> IO ()
 confluence mcm n s v d bts fTyM dprs = case evalState (runMaybeT $ CP.criticalPairs dprs dprs) n of
