@@ -385,7 +385,6 @@ funFunCaseFilter :: (Orderable a, IsStatus b, Equatable b) =>
   Bool -> Set (Var,Typ) -> Term -> Term -> Id -> Id -> [Term] -> [Term] ->
   ReaderT (CPOInfoFilter a b) FreshM Constraint
 funFunCaseFilter varRec vars s t f g ss ts = do
-  traceM ("funFunCase: " ++ show s ++ " vs " ++ show t)
   st <- asks (stat . base)
   funPrec <- asks (fPrec . base)
   setMap <- asks filterSet
