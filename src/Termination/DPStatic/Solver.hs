@@ -38,6 +38,8 @@ data FFlag = Formative | All deriving (Show, Eq)
 
 data DPProblem = DPProblem {dprules :: [SDP], rules :: ES, mflag :: MFlag, fflag :: FFlag} deriving (Show, Eq)
 
+data Flag = YES | NO | Maybe deriving (Show, Eq)
+
 data ProcResult
   = No
   | Problems [DPProblem]
@@ -143,29 +145,34 @@ nonTrivialSCCs sdps =
 dependencyGraphProcessor :: DPProblem -> ProcResult
 dependencyGraphProcessor prob@(DPProblem{dprules = dp}) = Problems [ prob{dprules = cycle}| cycle <- nonTrivialSCCs dp]
 
-runProcessors :: ES -> SMTSolver -> [Sort] -> FunTypMap -> IO Bool
+runProcessors :: ES -> SMTSolver -> [Sort] -> FunTypMap -> IO Flag
 runProcessors es s allSorts fTyM = do
   mPrec <- findSortOrdering s allSorts es
   case mPrec of
-    Nothing   -> return False
+    Nothing   -> return Maybe
     Just prec -> do
       let sdp = runStaticDependencyPairs es
       let dpProblem =  DPProblem{dprules = sdp, rules = es, mflag = (Computable es), fflag = Formative}
       let Problems cycles = dependencyGraphProcessor dpProblem
       if null cycles
         then do
-          return True
+          return YES
         else processorLoop cycles s allSorts prec fTyM
 
-processorLoop :: [DPProblem] -> SMTSolver -> [Sort] -> M.Map Id Integer -> FunTypMap -> IO Bool
-processorLoop dpps s allSorts prec fTyM = do
-  computed <- forM dpps $ \dpp -> computableSubtermProcessor s dpp allSorts prec
-  computed2 <- forM computed $ \dpp -> reductionTripleNCPOProcessorFilter dpp s allSorts fTyM (length $ dprules dpp) prec
-  let resplit = [ p { dprules = c } | p <- computed2, c <- nonTrivialSCCs (dprules p) ]
-      size ps = sum (map (length . dprules) ps)
-  if null resplit then return True
-  else if size resplit >= size dpps then return False
-  else processorLoop resplit s allSorts prec fTyM
+processorLoop :: [DPProblem] -> SMTSolver -> [Sort] -> M.Map Id Integer -> FunTypMap -> IO Flag
+processorLoop dpps s allSorts prec fTyM
+  | any trivialLoop dpps = return NO
+  | otherwise = do
+      computed  <- forM dpps $ \dpp -> computableSubtermProcessor s dpp allSorts prec
+      computed2 <- forM computed $ \dpp -> reductionTripleNCPOProcessorFilter dpp s allSorts fTyM (length $ dprules dpp) prec
+      let resplit = [ p { dprules = c } | p <- computed2, c <- nonTrivialSCCs (dprules p) ]
+          size ps = sum (map (length . dprules) ps)
+      if null resplit then return YES
+      else if size resplit >= size dpps then return Maybe
+      else processorLoop resplit s allSorts prec fTyM
+
+trivialLoop :: DPProblem -> Bool
+trivialLoop DPProblem{dprules = dps} = any (\SDP{rule = r} -> lhs r == rhs r) dps
 
 
 computableSubtermProcessor :: SMTSolver -> DPProblem -> [Sort] -> M.Map Id Integer -> IO DPProblem

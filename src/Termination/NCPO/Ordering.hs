@@ -21,6 +21,7 @@ import Term.Ops (hdToTerm,danglingDB)
 import Subst.Ops (applyAbsToVar,applyAbsToTerms)
 import Termination.NCPO.Type (CPOInfo(..),IsStatus(..),CPOInfoFilter(..))
 import Control.Monad (forM, forM_)
+import Debug.Trace (traceM)
 
 -- |custom data type which indicates whether types should be compared in a given NCPO call
 data TypeComparison = Compare | NoCompare
@@ -279,62 +280,64 @@ awoFilter varRec s t =
 
 equalFilter :: (Orderable a, IsStatus b, Equatable b) =>
  Term -> Term -> ReaderT (CPOInfoFilter a b) FreshM Constraint
-equalFilter s t = do
-  setMap <- asks filterSet
-  inMap <- asks filterIn
-  let n = length $ sp s
-  let m = length $ sp t
+equalFilter s t
+ | nlams s /= nlams t || typ s /= typ t = pure false
+ | otherwise = do
+    setMap <- asks filterSet
+    inMap <- asks filterIn
+    let n = length $ sp s
+    let m = length $ sp t
 
-  case (hd s, hd t) of
+    case (hd s, hd t) of
 
-    (F f, F g) | f == g -> do
-      let m = length (sp t)
-      if n /= m then return false else do
-        const <- forM [1 .. n] $ \i -> do
-          recursive <- equalFilter (sp s !! (i-1)) (sp t !! (i-1))
-          return (inMap ! (f,i) ==> recursive)
-        return (and const)
+      (F f, F g) | f == g -> do
+        let m = length (sp t)
+        if n /= m then return false else do
+          const <- forM [1 .. n] $ \i -> do
+            recursive <- equalFilter (sp s !! (i-1)) (sp t !! (i-1))
+            return (inMap ! (f,i) ==> recursive)
+          return (and const)
 
-    (F f, F g) -> do
-      let setS = setMap ! f
-      let setT = setMap ! g
-      fCollapse <- do 
+      (F f, F g) -> do
+        let setS = setMap ! f
+        let setT = setMap ! g
+        fCollapse <- do 
+          const <- forM [1 .. n] $ \i -> do
+            recursive <- equalFilter (sp s !! (i-1)) t
+            return (inMap ! (f,i) && recursive)
+          return (not setS && or const)
+
+        gCollapse <- do 
+          const <- forM [1 .. m] $ \i -> do
+            recursive <- equalFilter s (sp t !! (i-1))
+            return (inMap ! (g,i) && recursive)
+          return (not setT && or const)
+
+        return (fCollapse || gCollapse)
+
+      (F f, _) -> do
+        let setS = setMap ! f
         const <- forM [1 .. n] $ \i -> do
           recursive <- equalFilter (sp s !! (i-1)) t
           return (inMap ! (f,i) && recursive)
         return (not setS && or const)
 
-      gCollapse <- do 
+      (_, F g) -> do
+        let setT = setMap ! g
         const <- forM [1 .. m] $ \i -> do
           recursive <- equalFilter s (sp t !! (i-1))
           return (inMap ! (g,i) && recursive)
         return (not setT && or const)
 
-      return (fCollapse || gCollapse)
-
-    (F f, _) -> do
-      let setS = setMap ! f
-      const <- forM [1 .. n] $ \i -> do
-        recursive <- equalFilter (sp s !! (i-1)) t
-        return (inMap ! (f,i) && recursive)
-      return (not setS && or const)
-
-    (_, F g) -> do
-      let setT = setMap ! g
-      const <- forM [1 .. m] $ \i -> do
-        recursive <- equalFilter s (sp t !! (i-1))
-        return (inMap ! (g,i) && recursive)
-      return (not setT && or const)
-
-    (hs, ht)
-      | hs == ht -> do
-          if n /= m
-            then pure false
-            else do
-              eqs <- forM [1 .. n] $ \i ->
-                equalFilter (sp s !! (i-1)) (sp t !! (i-1))
-              pure (and eqs)
-      | otherwise -> pure false
+      (hs, ht)
+        | hs == ht -> do
+            if n /= m
+              then pure false
+              else do
+                eqs <- forM [1 .. n] $ \i ->
+                  equalFilter (sp s !! (i-1)) (sp t !! (i-1))
+                pure (and eqs)
+        | otherwise -> pure false
 
 ncpoWeakFilter :: (Orderable a, IsStatus b, Equatable b) =>
  Bool -> TypeComparison  -> Set (Var,Typ) -> Term -> Term -> ReaderT (CPOInfoFilter a b) FreshM Constraint
@@ -382,6 +385,7 @@ funFunCaseFilter :: (Orderable a, IsStatus b, Equatable b) =>
   Bool -> Set (Var,Typ) -> Term -> Term -> Id -> Id -> [Term] -> [Term] ->
   ReaderT (CPOInfoFilter a b) FreshM Constraint
 funFunCaseFilter varRec vars s t f g ss ts = do
+  traceM ("funFunCase: " ++ show s ++ " vs " ++ show t)
   st <- asks (stat . base)
   funPrec <- asks (fPrec . base)
   setMap <- asks filterSet
