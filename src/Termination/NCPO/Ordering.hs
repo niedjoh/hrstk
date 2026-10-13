@@ -375,7 +375,7 @@ ssoFilter varRec vars s@(Term {typ = Typ [] a}) t =
               let possibleVarLists = allPossibilities candidateVars
                   toTerm (x,c) = hdToTerm c (FV x)
                   f xs = case applyAbsToTerms u (map toTerm xs) of
-                    Just uxs -> pure . bool $ uxs == t
+                    Just uxs -> equalFilter uxs t
                     Nothing -> pure false
               or <$> traverse f possibleVarLists
 ssoFilter varRec _ s t = ncpoFilter varRec Compare S.empty s t
