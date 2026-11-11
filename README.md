@@ -53,7 +53,22 @@ You can use `cabal run hrstk-gen -- <ARGS>` to generate terms/DHPs
 
 ## Transformation of Ari-files
 
-Use `cabal run hrstk-transform -- <absolute path to directory containing .ari files>` to transform .ari-files
+    cabal run hrstk-wb-transform -- FILE|DIR [OPTIONS]
+
+Transforms a single `.ari` file, or all `.ari` files in a directory (recursively),
+into well-behaved STMRSs.
+
+By default, the output is written to `output/<dirname>/…` next to the input directory,
+mirroring the input's directory structure.
+
+### Options
+
+| Option              | Description                                                                 |
+|---------------------|-----------------------------------------------------------------------------|
+| `-o, --out-dir DIR` | Write the output to `DIR` instead of the default location.                  |
+| `-n, --name NAME`   | Single file: name of the output file. Directory: name of the output folder (instead of `output`). |
+| `-l, --log FILE`    | Write the log to `FILE`. By default, the log is printed to stdout.          |
+| `-h, --help`        | Show the help text.
 
 ## Input Requirements
 
