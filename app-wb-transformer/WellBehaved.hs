@@ -1,8 +1,7 @@
 module WellBehaved where
 
 import Term.Type
-import Term.Ops (freeVars)
-import Utils.Type
+import Term.Ops (freeVars, shiftDB)
 import Typ.Ops(sort)
 import Typ.Type (Typ(..))
 import qualified Data.Set as Set
@@ -49,10 +48,9 @@ checkWBHelp term@(Term { nlams = n, sp = children, hd = h}) w ar
 
 
 -- Eta-reduces all the lamdbas which are in FV argument position. Works under the assumption that all
--- SMTRS lhs are EPATs (All lambdas in FV argument positions are eta-reducible)
 -- Eta-reduces lambdas in FV argument positions. 
 etaReduceFVLambdas :: Term -> Term
-etaReduceFVLambdas term@(Term { hd = FV _, sp = children }) = term { sp = checkForLambdas (map checkArg children) } 
+etaReduceFVLambdas term@(Term { hd = FV _, sp = children }) = term { sp = map checkArg children } 
  where
  -- Helper: Decides the mode based on the FV's immediate argument
     checkArg child@(Term { nlams = n })
@@ -88,16 +86,11 @@ checkDBnFree (Term{nlams = n, sp = children}) m =
     -- 2. Pass (m + n) to the children. Let them handle their own nlams!
     all (\child -> checkDBnFree child (m + n)) children
 
--- Shift the DB after cutting one of them off
-shiftDB :: Int -> Term -> Term
-shiftDB cutoff term@(Term{nlams = n, sp = children, hd = DB m})
-    -- 1. Check against (cutoff + n) because DB m is inside this term's lambdas
-    | m > (cutoff + n) = term { hd = DB (m - 1), sp = map (\child -> shiftDB (cutoff + n) child) children }
-    -- 2. Pass (cutoff + n) to the children. Let them handle their own nlams!
-    | otherwise        = term { sp = map (\child -> shiftDB (cutoff + n) child) children }  
-shiftDB cutoff term@(Term{nlams = n, sp = children}) = 
-    -- pass the current scope depth to the children
-    term { sp = map (\child -> shiftDB (cutoff + n) child) children }
+-- | Removes the innermost lambda and the last argument:
+--   Precondition: xn occurs nowhere else (checked by isEtaReducible).
+dropInnermostLambda :: Term -> Term
+dropInnermostLambda t =
+  (shiftDB (-1) t { nlams = 0, sp = init (sp t) }) { nlams = nlams t - 1 }
 
 isBareDB0 :: Term -> Bool
 isBareDB0 Term{nlams = 0, hd = DB 0, sp = []} = True
@@ -112,5 +105,5 @@ etaReduceRoot term@(Term { nlams = n, sp = children })
   | otherwise =
       let term' = term { sp = init children ++ [etaReduceRoot (last children)] }
       in if isEtaReducible term'
-           then etaReduceRoot (shiftDB (-(n-1)) term { nlams = n - 1, sp = init children })
+           then etaReduceRoot (dropInnermostLambda term)
            else term
