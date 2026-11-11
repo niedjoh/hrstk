@@ -14,7 +14,7 @@ import Prettyprinter.Render.Text (renderStrict)
 import Data.List
 import System.Directory (doesDirectoryExist, listDirectory, createDirectoryIfMissing)
 import System.FilePath ((</>), takeExtension, takeDirectory, splitFileName, makeRelative, dropTrailingPathSeparator)
-import System.IO (hPutStr, hPutStrLn, Handle, IOMode(..), stdout, withFile)
+import System.IO (hPutStrLn, Handle, IOMode(..), stdout, withFile)
 import Options.Applicative
 import Control.Monad (forM_)
 
