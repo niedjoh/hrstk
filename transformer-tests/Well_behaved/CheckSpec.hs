@@ -7,7 +7,35 @@ import Term.Type
 import Utils.Type
 import Typ.Type
 import Data.Text (Text)
+import qualified Data.Text.IO as TIO
+import Equation.Type
+import ARI.Parse
+import System.FilePath ((</>), takeExtension, takeDirectory, splitFileName, makeRelative, dropTrailingPathSeparator, takeFileName)
+import Ari
+import Control.Monad (forM_)
+import Utils.InputProcessing
+import Utils.Parse
 
+import Data.List (nub)
+import Data.Maybe (fromMaybe)
+
+-- free variables in order of first occurrence
+varsInOrder :: Term -> [Var]
+varsInOrder t = [v | FV v <- [hd t]] ++ concatMap varsInOrder (sp t)
+
+renameFVs :: [(Var, Var)] -> Term -> Term
+renameFVs m t = t { hd = h', sp = map (renameFVs m) (sp t) }
+  where
+    h' = case hd t of
+           FV v -> FV (fromMaybe v (lookup v m))
+           h    -> h
+
+-- rename the free variables of a rule to Fresh 0, Fresh 1, ...
+canonical :: Equation -> Equation
+canonical e = e { lhs = renameFVs m (lhs e), rhs = renameFVs m (rhs e) }
+  where
+    vs = nub (varsInOrder (lhs e) ++ varsInOrder (rhs e))
+    m  = zip vs (map Fresh [0 ..])
 
 dummyTyp :: Typ
 dummyTyp = Typ [] (Id "N")
@@ -57,8 +85,53 @@ doubleLambdaReduced = app (func "f") [app (fv "F") [func "g" , func "g", app (fu
 
 nothingToReduce = app (func "f") [app (fv "F") [app (func "g") [lam 1 (app (func "g") [db 0])]]]
 
-spec :: Spec
-spec = do
+
+-- Edge case 1: the bound variable is applied to something: λw. g (w a)
+-- Not an η-redex, must stay unchanged.
+appliedBoundVar = app (func "f") [app (fv "F") [lam 1 (app (func "g") [app (db 0) [func "a"]])]]
+
+-- Edge case 2: the last argument has its own binder: λw. g (λv. v)
+-- DB 0 inside refers to v, not w, so this is not η-reducible either.
+innerBinder = app (func "f") [app (fv "F") [lam 1 (app (func "g") [lam 1 (db 0)])]]
+
+-- Edge case 3: greedy mode. λw. h (λv. k v) w
+-- The outer lambda is η-reducible, but λv. k v is an argument of the function symbol h
+-- and should stay η-long. Expected: F (h (λv. k v)), not F (h k).
+greedyInner = app (func "f") [app (fv "F") [lam 1 (app (func "h") [lam 1 (app (func "k") [db 0]), db 0])]]
+
+greedyInnerExpected = app (func "f") [app (fv "F") [app (func "h") [lam 1 (app (func "k") [db 0])]]]
+
+-- Edge case 4: lambda whose body does not have a sort type (needs real types).
+-- λx. h x where h x : N -> N, so the whole lambda has type N -> N -> N.
+nonSortBody = app (func "f") [(lam 1 (app (func "h") [db 0])) { typ = Typ [dummyTyp, dummyTyp] (Id "N") }]
+
+
+parseFileForTest :: FilePath -> IO (Int,[Sort],FunTypMap,Bool,Bool,ES,ES)
+parseFileForTest path = do
+    input <- TIO.readFile path
+    
+    let result = processInput path input HRS False False False (parseProblem scARI parser)
+    
+    case result of
+        Left e  -> fail $ "Failed to parse test file " ++ path ++ ": " ++ show e
+        Right r -> return r
+
+-- Because the transformer only eta-reduces terms and parsing eta-expands, parsed HRSs should stay the same after parse -> transform -> parse 
+spec_roundtrip :: Spec
+spec_roundtrip = describe "Round-trip test for the transformer" $ do
+  files <- runIO (getAriFiles "transformer-tests/Higher_Order_Rewriting")
+  forM_ files $ \file ->
+    it file $ do
+      (_, _, _, _, _, before, _) <- parseFileForTest file
+      let outPath = "roundtrip-tmp" </> takeFileName file
+      _ <- transform file outPath
+      (_, _, _, _, _, after, _) <- parseFileForTest outPath
+      map canonical after `shouldBe` map canonical before
+    
+
+
+spec_single_transform :: Spec
+spec_single_transform = do
     describe "Environment Check" $ do
         it "successfully imports the module and runs a test" $ do
             True `shouldBe` True
@@ -90,4 +163,24 @@ spec = do
 
         it "Lambdas at non-FV argument position do not get reduced" $ do
             (etaReduceFVLambdas nothingToReduce) `shouldBe` nothingToReduce
+
+    describe "Edge cases of etaReduceFVLambdas" $ do
+        it "does not reduce when the bound variable is applied" $ do
+            etaReduceFVLambdas appliedBoundVar `shouldBe` appliedBoundVar
+
+        it "does not reduce when the last argument has its own binder" $ do
+            etaReduceFVLambdas innerBinder `shouldBe` innerBinder
+
+        it "keeps lambdas under function symbols η-long" $ do
+            etaReduceFVLambdas greedyInner `shouldBe` greedyInnerExpected
+
+    describe "Edge cases of checkWellBehavedness" $ do
+        it "rejects a lambda whose body does not have a sort type" $ do
+            checkWellBehavedness nonSortBody `shouldBe` False
+
+
+spec :: Spec
+spec = describe "Transform " $ do
+    spec_roundtrip
+    spec_single_transform
 

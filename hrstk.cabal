@@ -44,7 +44,7 @@ executable hrstk-gen
   hs-source-dirs:   app-gen
   default-language: Haskell2010
 
-executable hrstk-transform
+executable hrstk-wb-transform
   main-is:          Main.hs
   other-modules: WellBehaved, Pretty, Ari
   ghc-options:      -Wall -Wunused-imports
@@ -57,7 +57,8 @@ executable hrstk-transform
      , text
      , directory
      , filepath
-  hs-source-dirs:   stmrs-transformer
+     , containers
+  hs-source-dirs:   app-wb-transformer
   default-language: Haskell2010
   
 library hrstk-lib
@@ -164,16 +165,18 @@ test-suite hrstk-test
 test-suite hrstk-transformer-test
     default-language: Haskell2010
     type:             exitcode-stdio-1.0
-    hs-source-dirs:   transformer-tests, stmrs-transformer
+    hs-source-dirs:   transformer-tests, app-wb-transformer
     main-is:          Spec.hs
-    other-modules:    WellBehaved, Pretty, Ari
+    other-modules:    Well_behaved.CheckSpec, WellBehaved, Pretty, Ari
     build-tool-depends: hspec-discover:hspec-discover
     build-depends:    
-        base >= 4.18,
-        hrstk-lib,
-        hspec,
-        text,
-        directory,
-        filepath,
-        hedgehog,
-        prettyprinter
+        base >= 4.18
+        , hrstk-lib
+        , hspec
+        , text
+        , directory
+        , filepath
+        , hedgehog
+        , prettyprinter
+        , containers
+        , optparse-applicative

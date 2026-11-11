@@ -1,2 +1,5 @@
 *~
 dist-newstyle/*
+transformer-tests/Higher_Order_Rewriting/*
+roundtrip-tmp/*
+*.log

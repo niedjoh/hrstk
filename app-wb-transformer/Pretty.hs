@@ -73,8 +73,6 @@ getSortName (Typ [] (Id name)) = name
 getSortName _ = "unknown_sort" -- Fallback just in case
 
 prettyTyp :: Typ -> Doc ann
--- Fall 1: Keine Argumente. Es ist ein Basis-Sort (z.B. N). Drucke einfach die ID.
 prettyTyp (Typ [] sortId) = pretty sortId
--- Fall 2: Es gibt Argumente. Es ist eine Funktion. Bilde (-> arg1 arg2 ... ret)
 prettyTyp (Typ args retId) = 
     parens ("->" <+> hsep (map prettyTyp args) <+> pretty retId)
