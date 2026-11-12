@@ -8,13 +8,16 @@ import Control.Monad (void)
 import Control.Monad.Trans.State (gets,modify)
 import Data.List (unsnoc)
 import Data.Functor (($>))
+import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
+
 import qualified Data.Set as S
 import Data.Text (Text)
 import Fmt ((|+),(+|))
 import Text.Megaparsec (choice,some,getOffset,setOffset)
 
-import Utils.ITerm (IEquation(..),ITerm(..),IHead(..),ipos)
+import Utils.Misc (someIterations)
+import Utils.ITerm (IEquation(..),ITerm(..),IHead(..),ipos,addFVTypes)
 import Utils.Parse
     ( identifierARI
     , parensARI
@@ -26,11 +29,11 @@ import Utils.Parse
     , addSort
     , insertFunVar
     )
+
 import Utils.Type (Id(..),Var(..))
 import Typ.Type (Typ(..))
 
-
-data Kind = SortDecl | FunDecl | VarDecl | Rule | Axiom | Conjecture
+data Kind = SortDecl | FunDecl | Rule | Axiom | Conjecture
 
 parser :: Parser [Maybe (Either IEquation IEquation)]
 parser = do
@@ -42,8 +45,7 @@ sexpr = parensARI $ do
   k <- kind
   case k of
     SortDecl -> sortDecl $> Nothing
-    FunDecl -> funVarDecl Fun $> Nothing
-    VarDecl -> funVarDecl Var $> Nothing
+    FunDecl -> funDecl $> Nothing
     Rule -> Just . Left <$> equation True
     Axiom -> Just . Left <$> equation False
     Conjecture -> Just . Right <$> equation False
@@ -51,14 +53,12 @@ sexpr = parensARI $ do
 kind :: Parser Kind
 kind = fromText <$> (   symbolARI "sort"
                     <|> symbolARI "fun"
-                    <|> symbolARI "var"
                     <|> symbolARI "rule"
                     <|> symbolARI "axiom"
                     <|> symbolARI "conjecture"
                     ) where
   fromText "sort" = SortDecl
   fromText "fun" = FunDecl
-  fromText "var" = VarDecl
   fromText "rule" = Rule
   fromText "axiom" = Axiom
   fromText "conjecture" = Conjecture
@@ -104,21 +104,58 @@ typ = choice
   , arrowTyp
   ]
 
-funVarDecl :: (Typ -> FunVar) -> Parser ()
-funVarDecl f = do
+redefFun :: Text -> String
+redefFun idt = "re-definition of function symbol '"+|idt|+"'"
+
+redefVar :: Text -> String
+redefVar idt = "re-definition of variable '"+|idt|+"'"
+
+funDecl :: Parser ()
+funDecl = do
   p <- getOffset
   fvM <- gets funVarMap
   idt <- identifierARI
   a <- typ
   case fvM M.!? idt of
-    Just _ -> setOffset p >> fail ("re-definition of function/variable '"+|idt|+"'")
-    Nothing -> modify $ insertFunVar idt (f a)
+    Just (Fun _) -> setOffset p >> fail (redefFun idt)
+    Just (Var _) -> error "impossible case"
+    Nothing -> modify $ insertFunVar idt (Fun a)
+
+boundVarDecl :: Parser (Text,Typ)
+boundVarDecl = parensARI $ do
+  idt <- identifierARI
+  a <- typ
+  return (idt,a)
+
+varDecl :: Map Text Typ -> Parser (Map Text Typ)
+varDecl vM = parensARI $ do
+  p <- getOffset
+  fvM <- gets funVarMap
+  idt <- identifierARI
+  a <- typ
+  case fvM M.!? idt of
+    Just (Fun _) -> setOffset p >> fail (redefFun idt)
+    Just (Var _) -> error "impossible case"
+    Nothing -> case vM M.!? idt of
+      Just _ -> setOffset p >> fail (redefVar idt)
+      Nothing -> return $ M.insert idt a vM
+
+freeVarsDecl :: Parser (Map Text Typ)
+freeVarsDecl = do
+  void $ symbolARI ":var"
+  vM <- parensARI $ someIterations varDecl M.empty
+  return vM
 
 equation :: Bool -> Parser IEquation
 equation b = do
   l <- term []
   r <- term []
-  return $ IEquation { ilhs = l, irhs = r, iisRule = b, iposl = ipos l, iposr = ipos r}
+  vM <- freeVarsDecl <|> pure M.empty
+  return $ IEquation { ilhs = addFVTypes vM l
+                     , irhs = addFVTypes vM r
+                     , iisRule = b
+                     , iposl = ipos l
+                     , iposr = ipos r }
 
 term :: Ctx -> Parser ITerm
 term ctx = choice
@@ -127,22 +164,16 @@ term ctx = choice
                        , appliedHd ctx]
   ]
 
-boundVarDecl :: Parser (Text,Typ)
-boundVarDecl = parensARI $ do
-  idt <- identifierARI
-  a <- typ
-  return (idt,a)
-
 hd :: Ctx -> Parser (IHead, Maybe Typ)
 hd ctx = do
   idt <- identifierARI
   fvM <- gets funVarMap
   case lookup idt $ zipWith (\(k,v) i -> (k,(v,i))) ctx [0..] of
     Just (a,i) -> return (IDB (Id idt) i, Just a)
-    Nothing -> case fvM M.!? idt of
-      Just (Fun a) -> return (IF (Id idt), Just a)
-      Just (Var a) -> return (IFV (Named . Id $ idt), Just a)
-      _ -> return (IFV (Named . Id $ idt), Nothing)
+    Nothing    -> case fvM M.!? idt of
+      Just (Fun a)  -> return (IF (Id idt), Just a)
+      Just (Var _) -> error "impossible case"
+      Nothing -> return (IFV (Named . Id $ idt), Nothing)
 
 hdAsTerm :: Ctx -> Parser ITerm
 hdAsTerm ctx = do

@@ -1,0 +1,4 @@
+(format HRS)
+(sort o)
+(fun f (-> o o))
+(rule (f (F X)) (F X) :var ((F (-> o o)) (X o)))

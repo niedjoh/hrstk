@@ -5,9 +5,12 @@ module Utils.ITerm where
 
 import Control.Exception (assert)
 import Data.List (stripPrefix)
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
+import Data.Text (Text)
 import Prettyprinter (Pretty,pretty,align,emptyDoc,tupled)
 
-import Utils.Type (Id,Var)
+import Utils.Type (Id(..),Var(..))
 import Typ.Type (Typ(..))
 import Typ.Ops (liftTyp,arity)
 import Term.Type (Term(..),Head(..))
@@ -19,6 +22,7 @@ type Pos = Int
 data IHead = IF Id | IFV Var | IDB Id Int deriving (Eq,Ord,Show)
 
 -- |intermediate term representation which stores positions while parsing
+-- here, (Maybe Typ) referes to the type of the head symbol
 data ITerm = IMat Pos IHead (Maybe Typ) [ITerm] | ILam Pos Id Typ ITerm deriving (Eq,Show)
 
 -- |intermediate equation representation which stores positions while parsing
@@ -47,6 +51,16 @@ instance Pretty ITerm where
 ipos :: ITerm -> Pos
 ipos (IMat p _ _ _) = p
 ipos (ILam p _ _ _) = p
+
+-- |To retroactively add type information from optional local variable
+-- declarations in ARI format
+addFVTypes :: Map Text Typ -> ITerm -> ITerm
+addFVTypes vM (IMat p h ma ts)
+  | IFV (Named (Id idt)) <- h, Just a <- vM M.!? idt = IMat p h (Just a) recres
+  | otherwise = IMat p h ma recres
+  where
+    recres = map (addFVTypes vM) ts
+addFVTypes vM (ILam p idt a s) = ILam p idt a (addFVTypes vM s)
 
 -- | This function tries to compute the type of an intermediate term.
 -- It does not check whether terms are correctly applied.

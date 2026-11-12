@@ -8,12 +8,7 @@ import qualified Data.Map.Strict as M
 import qualified Data.MultiSet as MS
 import Data.Text (Text)
 
-import qualified Predefined.Typ as Typ 
-import qualified Predefined.DB as DB
-import qualified Predefined.Fun as Fun
-
 import Utils.Type (Id(..),Var(..))
-import Term.Ops (mkTerm)
 import Termination.Poly.Type
 import Termination.Poly.Interpretation
 

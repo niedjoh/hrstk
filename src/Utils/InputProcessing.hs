@@ -111,9 +111,6 @@ adjustToInputType EPRS ie
       Left $ constructITError EPRS (iposl ie)
       "left-hand side is not an extended pattern" 
   | otherwise = adjustToInputType HRS ie
-
-
-  
 adjustToInputType DHPUnifProblem ie
   | not . isDHP . iTermToTerm . ilhs $ ie =
       Left $ constructITError DHPUnifProblem (iposl ie)
