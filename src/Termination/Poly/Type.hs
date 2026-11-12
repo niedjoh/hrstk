@@ -19,13 +19,13 @@ import Utils.Pretty (parensIf)
 type Monomial v = MultiSet v
 
 -- |polynomials represented as maps from multisets of variables to constants
-newtype Poly v c = Poly (Map (Monomial v) c) deriving (Eq, Ord)
+newtype Poly v c = Poly (Map (Monomial v) c) deriving (Eq, Ord, Show)
 
 -- |functional polynomial interpretations (with lambda abstraction)
-data FPoly v c = PLam (FPoly v c) | PBase (Poly v c) deriving (Eq, Ord)
+data FPoly v c = PLam (FPoly v c) | PBase (Poly v c) deriving (Eq, Ord, Show)
 
 -- |variables in polynomials
-data PVar = PDB Int | PFV Var deriving Eq
+data PVar = PDB Int | PFV Var deriving (Eq, Show)
 
 -- |custom 'Ord' instance because DBs are in reverse direction of printed names
 instance Ord PVar where
@@ -35,13 +35,13 @@ instance Ord PVar where
   compare (PFV v) (PFV w) = compare v w
 
 -- |symbolic parameters
-newtype Par = Par Int deriving (Eq, Ord)
+newtype Par = Par Int deriving (Eq, Ord, Show)
 
 -- |representation of symbolic coefficients which are then solved for
 type Parameter = Poly Par Int
 
 -- |polynomial variables applied to functional polynomials
-data ApplPVar c = ApplPVar PVar [FPoly (ApplPVar c) c] deriving (Eq, Ord)
+data ApplPVar c = ApplPVar PVar [FPoly (ApplPVar c) c] deriving (Eq, Ord, Show)
 
 -- |standard usage of applied variables
 type ApplPVarP = ApplPVar Parameter
@@ -63,7 +63,10 @@ instance (Eq c, Num c, Pretty c, Pretty v) => Pretty (Poly v c) where
         | MS.null k = pretty v
         | v == 1    = rest 
         | otherwise = pretty v <> "*" <> rest where
-            rest = foldr1 (<>) (intersperse "*" (map pretty (MS.elems k)))
+            rest = foldr1 (<>) (intersperse "*" (map prettyPower (MS.toOccurList k)))
+            prettyPower (x,i)
+              | i == 1    = pretty x
+              | otherwise = parens (pretty x <> "^" <> pretty i)
  
 instance Pretty FPolynomial where
   pretty = go [] (0 :: Int) where
@@ -78,8 +81,11 @@ instance Pretty FPolynomial where
             | MS.null ms = pretty par
             | par == 1   = rest
             | otherwise  = parensIf (isPlus par) (pretty par) <+> "*" <+> rest where
-                rest = foldr1 (\x y -> x <+> "*" <+> y) (map prettyVar (MS.elems ms))
-          isPlus (Poly a) = M.size a >= 2   
+                rest = foldr1 (\x y -> x <+> "*" <+> y) (map prettyPower (MS.toOccurList ms))
+          isPlus (Poly a) = M.size a >= 2
+          prettyPower (v,k)
+            | k == 1    = prettyVar v
+            | otherwise = parens (prettyVar v <+> "^" <+> pretty k)
           prettyVar (ApplPVar (PDB i) ps)
             | i < length ctx = applyIf (not $ null ps) (ctx !! i) ps
             | i < 0          = error "negative PDB"
@@ -104,7 +110,10 @@ instance Pretty (FPoly (ApplPVar Int) Int) where
             | MS.null ms = pretty i
             | i == 1     = rest
             | otherwise  = pretty i <> "*" <> rest where
-                rest = foldr1 (\x y -> x <> "*" <> y) (map prettyVar (MS.elems ms))
+                rest = foldr1 (\x y -> x <> "*" <> y) (map prettyPower (MS.toOccurList ms))
+          prettyPower (v,k)
+            | k == 1    = prettyVar v
+            | otherwise = parens (prettyVar v <> "^" <> pretty k)
           prettyVar (ApplPVar (PDB i) ps)
             | i < length ctx = applyIf (not $ null ps) (ctx !! i) ps
             | i < 0          = error "negative PDB"
@@ -118,7 +127,7 @@ instance (Ord v, Eq c, Num c) => Num (Poly v c) where
   (+) (Poly x) (Poly y) = normPoly . Poly $ M.unionWith (+) x y
   (*) (Poly x) (Poly y) =
     normPoly . Poly $ M.fromListWith (+) [ (vs1 `MS.union` vs2,c1 * c2)
-                                     | (vs1,c1) <- M.assocs x, (vs2,c2) <- M.assocs y ]  
+                                         | (vs1,c1) <- M.assocs x, (vs2,c2) <- M.assocs y ]
   fromInteger i = Poly $ M.singleton MS.empty (fromInteger i)
   negate (Poly x) = Poly $ M.map negate x
   abs = error "not implemented"

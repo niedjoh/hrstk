@@ -3,7 +3,7 @@
 
 -- |Interpretations for simply-typed lambda terms. the shape of constant interpretations is limited
 -- to second-order terms.
-module Termination.Poly.Interpretation (constIntMap, constIntMapWithStricts, constantInterpretation, interpret) where
+module Termination.Poly.Interpretation (constIntMap, constIntMapWithStricts, constantInterpretation, pBeta, interpret) where
 
 import Control.Monad (replicateM,mapAndUnzipM)
 import Data.List (nub, partition, foldl')

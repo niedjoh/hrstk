@@ -11,6 +11,7 @@ import UnifSpec (unifSpecs)
 import EquationOpsSpec (equationOpsSpecs)
 import RewritingSpec (rewritingSpecs)
 import CriticalPairsSpec (criticalPairsSpecs)
+import PolySpec (polySpecs)
 import NCPOSpec (ncpoSpecs)
 import StarCPOSpec (scpoSpecs)
 import Properties (props)
@@ -25,6 +26,7 @@ main = do
                                      , equationOpsSpecs
                                      , rewritingSpecs
                                      , criticalPairsSpecs
+                                     , polySpecs
                                      , ncpoSpecs
                                      , scpoSpecs
                                      ]
