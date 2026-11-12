@@ -43,7 +43,6 @@ freeVars :: Term -> Set Var
 freeVars s@(Term {hd = FV v}) = S.unions (S.singleton v : map freeVars (sp s))
 freeVars s = S.unions (map freeVars (sp s))
 
-
 -- |Computes the free variables and their types of a term.
 freeVarsTypMap :: Term -> Map Var Typ
 freeVarsTypMap s@(Term {hd = FV v, typ = Typ _ a}) =
