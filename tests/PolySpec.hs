@@ -45,19 +45,26 @@ spec_pBeta =
                                                                          , (ApplPVar (PDB 0) [],1) ]
                                                        )
                                                        (par 1)
-        fp2 = PLam . PBase . Poly $ M.singleton (MS.singleton (ApplPVar (PDB 0) [PBase . Poly $ M.singleton MS.empty (par 3)])) (par 2)
+        fp2 = PLam . PBase . Poly $ M.singleton (MS.fromOccurList [ (ApplPVar (PDB 0) [], 1)
+                                                                  , (ApplPVar (PDB 0) [], 1) ]
+                                                )
+                                                (par 1)
+        fp3 = PLam . PBase . Poly $ M.singleton (MS.singleton (ApplPVar (PDB 0) [PBase . Poly $ M.singleton MS.empty (par 3)])) (par 2)
         res1 = PLam . PBase . Poly $ M.singleton (MS.fromOccurList [ (ApplPVar (PDB 0) [],1) ]) (par 1 * par 2)
         res2 = PBase . Poly $ M.singleton MS.empty (par 1 * par 2 * par 3)
-        res3 = PBase . Poly $ M.singleton MS.empty (par 1 * par 2 * par 3)
-        res4 = PBase . Poly $ M.singleton MS.empty (par 1 * par 2 * par 3 * par 3)
+        res3 = PBase . Poly $ M.singleton MS.empty (par 1 * par 2 * par 2)
+        res4 = PBase . Poly $ M.singleton MS.empty (par 1 * par 2 * par 3)
+        res5 = PBase . Poly $ M.singleton MS.empty (par 1 * par 2 * par 3 * par 3)
     it "can do one step" $
       pBeta fp1 (PBase . Poly $ M.singleton MS.empty (par 2)) `shouldBe` res1
     it "can do iterated step" $
       pBeta res1 (PBase . Poly $ M.singleton MS.empty (par 3)) `shouldBe` res2
+    it "can do duplicated step" $
+      pBeta fp2 (PBase . Poly $ M.singleton MS.empty (par 2)) `shouldBe ` res3
     it "can do HO step" $
-      pBeta fp2 (PLam . PBase . Poly $ M.singleton (MS.singleton (ApplPVar (PDB 0) [])) (par 1)) `shouldBe` res3
+      pBeta fp3 (PLam . PBase . Poly $ M.singleton (MS.singleton (ApplPVar (PDB 0) [])) (par 1)) `shouldBe` res4
     it "can do duplicating HO step" $
-      pBeta fp2 (PLam . PBase . Poly $ M.singleton (MS.fromOccurList [(ApplPVar (PDB 0) [],2)]) (par 1)) `shouldBe` res3
+      pBeta fp3 (PLam . PBase . Poly $ M.singleton (MS.fromOccurList [(ApplPVar (PDB 0) [],2)]) (par 1)) `shouldBe` res5
   
 
 polySpecs :: Spec

@@ -48,12 +48,12 @@ constantInterpretation (Typ bs _) = do
           | vs <- replicateM m . map fst $ foVars
           , appl <- [ApplPVar w (map (pVarToFPoly 0) vs)] ]
         | (w,m) <- hoVars ]
-      p4 = [ MS.fromList . map (`ApplPVar` []) $ [vi,vj]
+      p4 = [ MS.fromList . map (`ApplPVar` ([] :: [FPolynomial])) $ [vi,vj]
            | (vi,i) <- zip (map fst foVars) [(0 :: Int)..], (vj,j) <- zip (map fst foVars) [0..], i < j ]
       addFreshPar x = (x,) . fst <$> freshPar
   constPart <- addFreshPar MS.empty
   (stricts,is) <- mapAndUnzipM (\x -> (\(par,i) -> ((x,par),i)) <$> freshPar) p1
-  nonStricts <- mapM addFreshPar (p2 ++ p3 ++ p4)
+  nonStricts <- mapM addFreshPar (p2 ++ p3) -- non-linear FO part (p4) left out for performance reasons
   return (iterate PLam (PBase . Poly $ M.fromList (constPart : stricts ++ nonStricts)) !! n, is)
 
 -- |Generate a map from constant identifiers to their parameterized polynomial interpretations
@@ -134,7 +134,7 @@ pSubst i q (Poly m) = foldl' (+) (Poly rest) news where
 -- Note that the result consists of polynomials rather than functional polynomials as in our settting,
 -- higher-order variables in monomials are always fully applied.
 mSubst :: PVar -> FPolynomial -> (Monomial ApplPVarP,Parameter) -> Polynomial
-mSubst target q (m,par) = foldl' (+) 0 $ map (* (Poly $ M.singleton rest par)) ms  where
+mSubst target q (m,par) = foldl' (*) (Poly $ M.singleton rest par) ms where
   (modify,rest) = MS.partition ((== target) . apvVar) m
   ms = [ pFullBeta q (apvArgs apv) | apv <- MS.toList modify ]
   pFullBeta p qs = case foldl pBeta p qs of
