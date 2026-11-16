@@ -9,14 +9,14 @@ import WellBehaved
 import Pretty
 import Equation.Type
 import Term.Type
+import Term.Ops (isEPAT, isPattern)
 import Prettyprinter
-import Prettyprinter.Render.Text (renderStrict)
+import Prettyprinter.Render.Text (renderStrict, hPutDoc)
 import Data.List
 import System.Directory (doesDirectoryExist, listDirectory, createDirectoryIfMissing)
 import System.FilePath ((</>), takeExtension, takeDirectory, splitFileName, makeRelative, dropTrailingPathSeparator)
 import System.IO (hPutStrLn, Handle, IOMode(..), stdout, withFile)
 import Options.Applicative
-import Control.Monad (forM_)
 
 
 data Opts = Opts
@@ -24,6 +24,7 @@ data Opts = Opts
   , outName :: Maybe FilePath
   , outDir  :: Maybe FilePath
   , logFile :: Maybe FilePath
+  , prsOnly   :: Bool
   }
 
 optsP :: Parser Opts
@@ -33,6 +34,7 @@ optsP = Opts
   <*> optional (strOption (long "out-dir" <> short 'o' <> metavar "DIR"))
   <*> optional (strOption (long "log"     <> short 'l' <> metavar "FILE"
                            <> help "Write the log to FILE instead of stdout"))
+  <*> switch (long "prs-only" <> help "Only accept PRSs")
 
 
 withLogHandle :: Maybe FilePath -> (Handle -> IO a) -> IO a
@@ -97,14 +99,13 @@ processAriFile h targetDir opts isDir file = do
   
   let outPath = computePath targetDir file opts isDir
   
-  transformMessage <- transform file outPath
+  transformMessage <- transform file outPath (prsOnly opts)
 
-  forM_ transformMessage $ \m -> do
-    hPutStrLn h m
+  hPutDoc h (transformMessage <> hardline)
 
 
-transform :: FilePath -> FilePath -> IO [String]
-transform file outPath = do
+transform :: FilePath -> FilePath -> Bool -> IO (Doc ann)
+transform file outPath prsBool = do
   input <- TIO.readFile file
 
   rawLines <- lines <$> readFile file
@@ -112,23 +113,23 @@ transform file outPath = do
   let ariParser = parseProblem scARI ARI.parser
 
   case processInput file input HRS False False False ariParser of
-      Left errorMsg -> do
-        let er =  "--- PARSE ERROR ---"
-        let er2 = errorMsg
-        return [er, er2]
+      Left errorMsg -> 
+        return $ "--- PARSE ERROR ---" <> hardline <> pretty errorMsg
         
       Right (_, _, _, _, _, axioms, _) -> do
         let lhss = map lhs axioms
         if not (all isEPAT lhss)
           then do
-            return ["The given HRS is not an EPRS"]
-          else do
+            return "The given HRS is not an EPRS"
+          else if prsBool && not (all isPattern lhss) then
+            return "The given HRS is not a PRS (skipped because of --prs-only)"
+            else do
             let results = map checkWellBehavedness lhss
             if and results 
               then do
                 createDirectoryIfMissing True (takeDirectory outPath)
                 saveToAriFile outPath axioms metadata
-                return ["All the rules are already well-behaved"]
+                return "All the rules are already well-behaved"
               else do
                 let o1 = "Not all rules are well-behaved. Trying transformation."
                 let result = map etaReduceFVLambdas lhss
@@ -136,9 +137,9 @@ transform file outPath = do
                 case isWellBehaved of
                   False -> do
                     let o2 = "The rules could not be transformed"
-                    return [o1, o2]
+                    return $ o1 <> hardline <> o2
                   _ -> do 
                     let o2 = "The rules were successfully transformed"
                     createDirectoryIfMissing True (takeDirectory outPath)
                     saveToAriFile outPath (changeLHSs axioms result) metadata
-                    return [o1, o2]
+                    return $ o1 <> hardline <> o2

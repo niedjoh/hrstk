@@ -1,17 +1,10 @@
 module WellBehaved where
 
 import Term.Type
-import Term.Ops (freeVars, shiftDB)
+import Term.Ops (freeVars, shiftDB, isEPAT)
 import Typ.Ops(sort)
 import Typ.Type (Typ(..))
 import qualified Data.Set as Set
-
-
-isEPAT :: Term -> Bool
-isEPAT t@(Term { hd = FV _ }) = all argOK (sp t)
-  where
-    argOK u = Set.null (freeVars u) && nlams (etaReduceRoot u) == 0
-isEPAT t = all isEPAT (sp t)
 
 
 -- Computes the list of Free Variables of a Term
@@ -35,7 +28,7 @@ checkArityConsitency ((h,i):xs) = all (\(_,i') -> i' == i) dups && checkArityCon
        rest = filter (\(h',_) -> h /= h') xs
 
 
--- Check if a SMTRS LHS is STRICTLY well-behaved
+-- Check if a SMTRS LHS is well-behaved
 checkWellBehavedness :: Term -> Bool
 checkWellBehavedness term = checkArityConsitency ar && checkWBHelp term w ar
  where w = freeVariablesLHS term
@@ -47,12 +40,14 @@ checkWBHelp term@(Term { nlams = n, sp = children, hd = h}) w ar
     | otherwise = sort (stripLams n (typ term)) && all (\child -> checkWBHelp child w ar) children
 
 
--- Eta-reduces all the lamdbas which are in FV argument position. Works under the assumption that all
--- Eta-reduces lambdas in FV argument positions. 
+-- | Eta-reduces, at the root, every argument of a free variable that is an
+--   abstraction. All other subterms are only traversed, not changed, so they
+--   stay eta-long.
 etaReduceFVLambdas :: Term -> Term
 etaReduceFVLambdas term@(Term { hd = FV _, sp = children }) = term { sp = map checkArg children } 
  where
- -- Helper: Decides the mode based on the FV's immediate argument
+    -- An argument of a free variable: reduce it if it is an abstraction,
+    -- otherwise continue the traversal.
     checkArg child@(Term { nlams = n })
         | n > 0     = etaReduceRoot child
         | otherwise = etaReduceFVLambdas child

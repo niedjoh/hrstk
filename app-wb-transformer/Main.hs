@@ -2,7 +2,7 @@
 module Main where
 
 import Ari
-import System.IO (withFile, IOMode(..), hPutStrLn)
+import System.IO (hPutStrLn)
 import Control.Monad (forM_)
 import Options.Applicative
 import System.Directory (doesDirectoryExist)
@@ -11,7 +11,10 @@ import System.Directory (doesDirectoryExist)
 
 main :: IO ()
 main = do
-    opts <- execParser (info (optsP <**> helper) (fullDesc <> progDesc "Process .ari files"))
+    opts <- execParser (info (optsP <**> helper) 
+        (fullDesc 
+        <> progDesc "transform higher-order ARI files representing EPRSs to well-behaved presentation"
+        <> header "hrstk-wb-transformer"))
     let inFile = inputFile opts
     putStrLn $ "Scanning directory: " ++ inFile
     files <- getAriFiles inFile

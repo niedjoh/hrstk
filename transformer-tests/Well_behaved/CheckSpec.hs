@@ -124,7 +124,7 @@ spec_roundtrip = describe "Round-trip test for the transformer" $ do
     it file $ do
       (_, _, _, _, _, before, _) <- parseFileForTest file
       let outPath = "roundtrip-tmp" </> takeFileName file
-      _ <- transform file outPath
+      _ <- transform file outPath False
       (_, _, _, _, _, after, _) <- parseFileForTest outPath
       map canonical after `shouldBe` map canonical before
     

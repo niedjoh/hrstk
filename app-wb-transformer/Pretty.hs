@@ -6,7 +6,8 @@ import Typ.Type
 import Term.Type
 import Utils.Type
 import Prettyprinter
-import Data.Text.Internal
+import Data.Text (Text)
+import Typ.Ops (argTyps)
 
 prettyAriSystem :: ES -> Doc ann
 prettyAriSystem equations = vsep (map prettyAriEquation equations)
@@ -52,23 +53,18 @@ prettyAri = go [] (0 :: Int) where
     in if k > 0 
        then 
             -- 1. Extract the list of argument types from the lambda node 's'
-            let argTyps = getArgTypes (typ s)
+            let listArgTyps = argTyps (typ s)
             
             -- 2. Zip the invented names (vars) with their corresponding types (argTyps)
                 bindings = hsep [ parens (pretty v <+> prettyTyp t) 
-                                          | (v, t) <- zip vars argTyps ]
+                                          | (v, t) <- zip vars listArgTyps ]
                                 
             in parens ("lambda" <+> parens bindings <+> appDoc)
        else 
             appDoc
 
-
--- Pulls the list of argument types out of the function's type signature
-getArgTypes :: Typ -> [Typ]
-getArgTypes (Typ args _returnType) = args
-
 -- Grabs the string name out of a base sort
-getSortName :: Typ -> Data.Text.Internal.Text
+getSortName :: Typ -> Text
 getSortName (Typ [] (Id name)) = name
 getSortName _ = "unknown_sort" -- Fallback just in case
 
