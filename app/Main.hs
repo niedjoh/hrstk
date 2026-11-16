@@ -63,6 +63,7 @@ instance Show InputFormat where
 data Mode = Info | Termination | Confluence | Unification | ConjectureJoinability
 
 instance Show Mode where
+  show Info = "info"
   show Termination = "term"
   show Confluence = "conf"
   show Unification = "unif"
