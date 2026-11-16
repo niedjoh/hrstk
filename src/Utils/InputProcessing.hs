@@ -78,13 +78,13 @@ pullDownToSort (ie,Typ as _) = (ie{ilhs = pdts $ ilhs ie, irhs = pdts $ irhs ie}
   accum i (ILam _ _ _ s) = accum (i+1) s
   accum i s@(IMat _ _ _ _) = let
     (bound,suffix) = first reverse $ splitAt i freshVars
-    in case repl bound s of
+    in case repl bound 0 s of
       IMat p ih ma ts -> IMat p ih ma (ts++suffix)
       _ -> error "impossible case"
-  repl bound (IMat p ih ma ts)
-    | IDB _ i <- ih, Just (IMat _ v _ _) <- bound !? i = IMat p v ma (map (repl bound) ts)
-    | otherwise = IMat p ih ma (map (repl bound) ts)
-  repl bound (ILam p idt a s) = ILam p idt a (repl bound s)
+  repl bound d (IMat p ih ma ts)
+    | IDB _ i <- ih, Just (IMat _ v _ _) <- bound !? (i-d) = IMat p v ma (map (repl bound d) ts)
+    | otherwise = IMat p ih ma (map (repl bound d) ts)
+  repl bound d (ILam p idt a s) = ILam p idt a (repl bound (d+1) s)
 
 -- |Checks whether an equation adheres to the mandated input type and determines whether it should
 -- be a rule or equation
