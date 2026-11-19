@@ -55,7 +55,7 @@ Given the supplied system, the tool
 * indicates when eta-expansion was performed
 * indicates when equations were pulled down to sort
 
-## hrstk--term
+## hrstk-term
 
 Termination tool for HRSs. The following methods are implemented:
 
