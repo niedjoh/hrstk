@@ -71,3 +71,9 @@ yices = Solver "yices" SMT.yices SMT.yices
 -- elements is mapped to a fresh SMT variable of specified type.
 smtVarMap :: (SMT.KnownSMTSort a, Ord k, SMT.MonadSMT s m) => [k] -> m (Map k (SMT.Expr a))
 smtVarMap xs = M.fromList <$> mapM (\a -> (a,) <$> SMT.var) xs
+
+smtSolverFromString :: String -> Either String SMTSolver
+smtSolverFromString "z3" = Right z3
+smtSolverFromString "cvc5" = Right cvc5
+smtSolverFromString "yices" = Right yices
+smtSolverFromString _ = Left "supported SMT solvers are 'z3', 'cvc5' and 'yices'"

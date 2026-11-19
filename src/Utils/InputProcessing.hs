@@ -27,10 +27,10 @@ import Equation.Type (ES)
 import Equation.Ops (varCondition)
 
 -- |type of input system
-data InputType = ES | HRS | EPRS | DPRS | PRS | DHPUnifProblem
+data InputType = HES | HRS | EPRS | DPRS | PRS | DHPUnifProblem
 
 instance Pretty InputType where
-  pretty ES = "ES"
+  pretty HES = "HES"
   pretty HRS = "HRS"
   pretty EPRS = "EPRS"
   pretty DPRS = "DPRS"
@@ -89,7 +89,7 @@ pullDownToSort (ie,Typ as _) = (ie{ilhs = pdts $ ilhs ie, irhs = pdts $ irhs ie}
 -- |Checks whether an equation adheres to the mandated input type and determines whether it should
 -- be a rule or equation
 adjustToInputType :: InputType -> IEquation -> Either (ParseError Text Void) IEquation
-adjustToInputType ES ie = Right ie
+adjustToInputType HES ie = Right ie
 adjustToInputType HRS ie
   | isHeadedByFreeVar . iTermToTerm . ilhs $ ie =
       Left $ constructITError HRS (iposl ie) "free variable in head position of left-hand side"

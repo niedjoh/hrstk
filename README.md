@@ -1,84 +1,101 @@
 # Higher-Order Rewriting Toolkit
 
-The tool `hrstk` is a tool for higher-order equational systems (HES) / higher-order
-rewrite systems (HRSs)  a la [Nipkow](https://doi.org/10.1016/S0304-3975(97)00143-6), i.e., higher-order 
-rewriting modulo beta/eta. The implementation keeps terms in beta-short eta-long normal form
-at all times.
+The higher-order rewriting toolkit (hrstk) is a collection of tools for
+higher-order rewrite systems (HRSs) due to Wolfram and
+[Nipkow](https://doi.org/10.1016/S0304-3975(97)00143-6),
+i.e., higher-order rewriting modulo beta/eta. After preprocessing,
+the implementation keeps terms in beta-short eta-long normal form at all times.
+The tool largely focuses on a subclass of HRSs called
+deterministic higher-order pattern rewrite systems ([DPRSs](https://arxiv.org/abs/2610.38576)).
 
-The tool has modes for unification of deterministic higher-order patterns (DHPs)
-(`-m unif`), checking whether a conjectured equation is joinable by a given
-deterministic higher-order patttern rewrite systems (DPRS) (`-m conj`),
-various confluence methods (`-m conf`) of DPRSs
+## Requirements
 
-* [orthogonality](https://jniederhauser.at/docs/dprs_ortho.pdf) of DPRSs (`-c ortho`)
-* [development closedness](https://doi.org/10.1016/S0304-3975(96)00173-9) of pattern rewrite systems (PRSs) (`-c dc`)
-* local confluence by joinability of [critical pairs](https://jniederhauser.at/docs/dprs_cp.pdf) for DPRSs (`-c lc`)
-* Knuth & Bendix' criterion (local confluence + termination) (`-c kb`)
+For some problem, the tools generate SMT constraints which are then
+sent to a solver via the awesome [hasmtlib](https://github.com/bruderj15/Hasmtlib).
+Via the `-s` command-line argument, you can choose your favorite SMT solver to solve the
+constraints computed by the tools. (Currently available: `cvc5`, `z3` and `yices2`,
+default: `cvc5`.)
 
-as well as various termination methods for HRSs (`-m term`):
+## Installation
 
-* the normalized computability path order [NCPO](https://jniederhauser.at/docs/wst2025.pdf) (`-t ncpo`)
-* polynomial interpretations with a fixed shape (`-t poly`) adapted from this 
-  [paper](https://doi.org/10.4230/LIPIcs.RTA.2012.176)
+With `cabal install` you get the following executables with
+symlinks in `~/.cabal/bin/`:
 
-The tool outputs `YES` if the problem of the respective mode could be solved.
-otherwise `MAYBE` is reported. For a human-checkable output, use the flag `-v`.
-If no specific confluence or termination method is given, a default strategy is used.
+* `hrstk-info`: file info
+* `hrstk-term`: termination tool for HRSs
+* `hrstk-conf`: confluence tool for DPRSs
+* `hrstk-conj`: conjecture joinability for DPRSs
+* `hrstk-unif`: unification of [deterministic higher-order patterns](https://doi.org/10.1007/978-3-540-25938-1_12)
+* `hrstk-gen`: generation of terms/determinitic higher-order patterns
 
-Supported formats are the fragment of 
+You can use `[tool] --help` to get more information for each tool.
+Use the option `-v` to get verbose output.
+
+## Input format
+
+Supported are the higher-order
+[ARI](https://project-coco.uibk.ac.at/ARI/)
+format (`-i ari`) as used in [TPDB](https://github.com/TermCOMP/TPDB-ARI)
+as well as the proposed HRS format for [ARI-COPS](https://project-coco.uibk.ac.at/ARI/hrs.php).
+Furthermore, the tool can read a fragment of
 [TPTP THF0](https://tptp.org/UserDocs/TPTPLanguage/TPTPLanguage.shtml) (`-i tptp`)
 where axioms / conjectures are of the form `∀...∀ l = r`, free variables
 of the equation are locally universally quantified and all terms are in
-beta-normal form. Furthermore, the tool can read the higher-order
-[ARI](https://project-coco.uibk.ac.at/ARI/)
-format (`-i ari`) as used in [TPDB](https://github.com/TermCOMP/TPDB-ARI). 
+beta-normal form. 
 Type checking/inference is performed automatically after parsing.
+Terms are automatically eta-expanded and rules are pulled down to sort.
 
-The tool makes heavy use of SMT solvers using the awesome new library 
-[hasmtlib](https://github.com/bruderj15/Hasmtlib). 
-Via the `-s` command-line argument, you can choose your favorite SMT solver to solve the
-constraints computed by `hrstk`. (Currently available: `cvc5`, `z3` and `yices2`.)
+## hrstk-info
 
-## Installation / Run
+Given the supplied system, the tool
 
-Use `cabal run hrstk -- <ARGS>` or install it via `cabal build` or `cabal install`.
+* determines whether it is a PRS, DPRS, EPRS, HRS or HES
+* checks whether it is left-linear
+* checks whether it is second-order
+* indicates when eta-expansion was performed
+* indicates when equations were pulled down to sort
+
+## hrstk--term
+
+Termination tool for HRSs. The following methods are implemented:
+
+* the normalized computability path order [NCPO](https://jniederhauser.at/docs/wst2025.pdf) (`-m ncpo`)
+* polynomial interpretations with a fixed shape (`-t poly`) for second-order HRSs adapted from this 
+  [paper](https://doi.org/10.4230/LIPIcs.RTA.2012.176)
+
+If no concrete method is given, the tool tries NCPO before polynomial interpretations.
+
+## hrstk-conf
+
+Confluence tool for DPRSs.
+The following methods are implemented:
+
+* orthogonalityof DPRSs (`-c ortho`)
+* [development closedness](https://doi.org/10.1016/S0304-3975(96)00173-9) of PRSs (`-c dc`)
+* local confluence by joinability of critical pairs) for DPRSs (`-c lc`)
+* Knuth & Bendix' criterion (local confluence + termination) for DPRSs (`-c kb`)
+
+If no concrete method is given, the tool tries orthogonality before development closedness
+and Knuth & Bendix' criterion.
+
+## hrstk-conj
+
+The tool reads a file containing a DPRS plus a conjecture (using an extension of the ARI
+format with `(conjecture term term)`) and tries to join the conjecture using
+the DPRS.
+
+## hrstk-unif
+
+The tool reads an equation of deterministic higher-order patterns and tries
+to [unify](https://arxiv.org/abs/2601.14211) them. The eqution will not be pulled
+down to sort.
+
+## hrstk-gen
+
+The tool generates a random sequence of terms. Use `-n` to set the number
+and `-d` to restrict to deterministic higher-order patterns.
 
 ## Testing
 
-Run `cabal run hrstk-test` for unit/property tests.
-
-## Generation of terms
-
-You can use `cabal run hrstk-gen -- <ARGS>` to generate terms/DHPs
-
-## Input Requirements
-
-The input must be in beta-normal form. Equations are eta-expanded and pulled down to their return sort
-automatically after parsing and type checking/inference. Info about the input system can be
-obtained by not giving any argument or using (`-m info`). The following conditions are automatically
-checked after reading the input file:
-
-### Unification
-
-An equation of DHPs which will not be pulled down to its return sort. Additional equations are ignored.
-
-### Confluence
-
-The input should be a DPRS. Left-linearity is demanded for orthogonality and
-development closedness. Furthermore, for development closedness, it is checked whether
-the input system is a PRS.
-
-### Conjecture Joinability
-
-The input should be a HRS. Queries can be done by including conjectures in both
-ARI and TPTP.
-
-### Termination
-
-The input system should be an HRS. Furthermore, the interpretation 
-shape for polynomial interpretations only supports essentially second-order systems, i.e.,
-all constants have types of order at most two, free variables have types of order at most one and 
-bound variables have base types. All these conditions are checked automatically after reading the
-input file.
-
+Run `cabal test` for unit/property tests.
 

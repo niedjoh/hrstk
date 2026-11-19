@@ -18,21 +18,71 @@ maintainer:         johannes.niederhauser@uibk.ac.at
 
 extra-source-files: CHANGELOG.md
 
-executable hrstk
+executable hrstk-info
   main-is:          Main.hs
   build-depends:
        base >= 4.18
      , hrstk-lib
-     , fmt
      , mtl
      , optparse-applicative
      , prettyprinter
      , text
-     , time
      , transformers ^>= 0.6.1.2
-  hs-source-dirs:   app
+  hs-source-dirs:   app-info
   default-language: Haskell2010
 
+executable hrstk-term
+  main-is:          Main.hs
+  build-depends:
+       base >= 4.18
+     , hrstk-lib
+     , mtl
+     , optparse-applicative
+     , prettyprinter
+     , text
+     , transformers ^>= 0.6.1.2
+  hs-source-dirs:   app-term
+  default-language: Haskell2010
+
+executable hrstk-conf
+  main-is:          Main.hs
+  build-depends:
+       base >= 4.18
+     , hrstk-lib
+     , mtl
+     , optparse-applicative
+     , prettyprinter
+     , text
+     , transformers ^>= 0.6.1.2
+  hs-source-dirs:   app-conf
+  default-language: Haskell2010
+
+executable hrstk-conj
+  main-is:          Main.hs
+  build-depends:
+       base >= 4.18
+     , hrstk-lib
+     , mtl
+     , optparse-applicative
+     , prettyprinter
+     , text
+     , transformers ^>= 0.6.1.2
+  hs-source-dirs:   app-conj
+  default-language: Haskell2010
+  
+executable hrstk-unif
+  main-is:          Main.hs
+  build-depends:
+       base >= 4.18
+     , hrstk-lib
+     , mtl
+     , optparse-applicative
+     , prettyprinter
+     , text
+     , transformers ^>= 0.6.1.2
+  hs-source-dirs:   app-unif
+  default-language: Haskell2010
+  
 executable hrstk-gen
   main-is:          Main.hs
   build-depends:
@@ -56,6 +106,7 @@ library hrstk-lib
     , Utils.InputProcessing
     , Utils.SMT
     , Utils.Type
+    , Utils.App
     , Typ
     , Typ.Type
     , Typ.Ops
@@ -106,6 +157,7 @@ library hrstk-lib
     , singletons-th
     , smtlib-backends-process
     , text
+    , time
     , transformers ^>= 0.6.1.2
     , vector
   hs-source-dirs: src
