@@ -23,5 +23,5 @@
 (rule (lam (lambda ((x vA)) (app L (var x)))) L)
 (rule (piA (pair M1 N1)) M1)
 (rule (piB (pair M1 N1)) N1)
-(rule (case (inl X) (lambda ((x A)) (F x)) (lambda ((y B)) (G y))) (F X))
-(rule (case (inr Y) (lambda ((x A)) (F x)) (lambda ((x B)) (G x))) (G Y))
+(rule (case (inl X) F G) (F X))
+(rule (case (inr Y) F G) (G Y))

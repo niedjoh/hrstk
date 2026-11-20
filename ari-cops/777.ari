@@ -17,7 +17,7 @@
 (fun pair (-> G G Pr<G_G>))
 (fun pi1 (-> Pr<G_G> G))
 (fun pi2 (-> Pr<G_G> G))
-(rule (app (lam (lambda ((x G)) (M x))) N) (M N))
+(rule (app (lam M) N) (M N))
 (rule (pi1 (pair x y)) x)
 (rule (pi2 (pair x y)) y)
 (rule (pair (pi1 t) (pi2 t)) t)

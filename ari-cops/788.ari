@@ -13,7 +13,7 @@
 (fun app (-> Ar<G_G> G G))
 (fun lam (-> (-> G G) Ar<G_G>))
 (fun pair (-> G G Pr<G_G>))
-(rule (app (lam (lambda ((x G)) (M x))) N) (M N))
+(rule (app (lam M) N) (M N))
 (rule (fix2 (lambda ((x1 G) (x2 G)) (pair (t1 x1 x2) (t2 x1 x2)))) (pair (fix (lambda ((y G)) (t1 y y))) (fix (lambda ((y G)) (t2 y y)))))
 (rule (union x 0) x)
 (rule (union 0 y) y)

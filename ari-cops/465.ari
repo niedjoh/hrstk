@@ -7,6 +7,6 @@
 (sort term)
 (fun abs (-> (-> term term) term))
 (fun app (-> term term term))
-(rule (app (abs (lambda ((x term)) (T x))) S) (T S))
+(rule (app (abs T) S) (T S))
 (rule (app (abs (lambda ((y term)) (abs (lambda ((x term)) (M y x))))) S) (abs (lambda ((x term)) (app (abs (lambda ((y term)) (M y x))) S))))
-(rule (app (app (abs (lambda ((x term)) (T x))) S) U) (app (abs (lambda ((x term)) (app (T x) U))) S))
+(rule (app (app (abs T) S) U) (app (abs (lambda ((x term)) (app (T x) U))) S))

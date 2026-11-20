@@ -6,5 +6,5 @@
 (fun abs (-> (-> term term) term))
 (fun app (-> term term term))
 (fun Dh term)
-(rule (app (abs (lambda ((x term)) (F x))) S) (F S))
+(rule (app (abs F) S) (F S))
 (rule (app (app Dh z) z) z)

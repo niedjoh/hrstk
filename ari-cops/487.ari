@@ -14,5 +14,5 @@
 (rule (f1 X) (f2 X X))
 (rule (f2 a X) (f3 X))
 (rule (g1 (lambda ((x o)) (f3 (F x)))) (F (hide (lambda ((x o)) (f3 (F x))))))
-(rule (unhide (hide (lambda ((x o)) (F x)))) (g2 (lambda ((x o)) (F x))))
+(rule (unhide (hide F)) (g2 F))
 (rule (g2 (lambda ((x o)) (f3 (F x)))) (g1 (lambda ((x o)) (f1 (F x)))))

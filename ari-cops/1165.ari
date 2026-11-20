@@ -8,7 +8,7 @@
 (fun D term)
 (fun D0 term)
 (fun D1 term)
-(rule (app (abs (lambda ((x term)) (F x))) S) (F S))
+(rule (app (abs F) S) (F S))
 (rule (app D0 (app (app D z0) z1)) z0)
 (rule (app D1 (app (app D z0) z1)) z1)
 (rule (app (app D (app D0 z)) (app D1 z)) z)

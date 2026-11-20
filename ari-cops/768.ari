@@ -12,7 +12,7 @@
 (fun pi1 (-> Pr<a_b> a))
 (fun pi2 (-> Pr<a_b> b))
 (fun pair (-> a b Pr<a_b>))
-(rule (app (lam (lambda ((x a)) (M x))) N) (M N))
+(rule (app (lam M) N) (M N))
 (rule (lam (lambda ((x a)) (app L x))) L)
 (rule (pi1 (pair S T)) S)
 (rule (pi2 (pair S T)) T)

@@ -9,7 +9,7 @@
 (fun let (-> var term (-> var term) term))
 (fun sub (-> (-> var term) term term))
 (fun var (-> var term))
-(rule (sub (lambda ((x var)) (var x)) N) N)
+(rule (sub var N) N)
 (rule (sub (lambda ((x var)) (var Y)) N) (var Y))
 (rule (sub (lambda ((x var)) (abs (lambda ((z var)) (M (var z) (var x))))) N) (abs (lambda ((z var)) (sub (lambda ((x var)) (M (var z) (var x))) N))))
 (rule (sub (lambda ((x var)) (let Y (L (var x)) (lambda ((z var)) (M (var z) (var x))))) N) (let Y (sub (lambda ((x var)) (L (var x))) N) (lambda ((z var)) (sub (lambda ((x var)) (M (var z) (var x))) N))))

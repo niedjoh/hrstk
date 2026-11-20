@@ -14,7 +14,7 @@
 (fun 2 int)
 (rule (altmap (lambda ((z int)) (pls z Y)) (cons X XS)) (cons (pls X Y) (altmap (lambda ((z int)) (mlt z Y)) XS)))
 (rule (altmap (lambda ((z int)) (mlt z Y)) (cons X XS)) (cons (mlt X Y) (altmap (lambda ((z int)) (pls z Y)) XS)))
-(rule (altmap (lambda ((z int)) (F z)) nil) nil)
+(rule (altmap F nil) nil)
 (rule (pls X Y) (+ X Y))
 (rule (mlt X Y) (* X Y))
 (rule (pls 2 2) (mlt 2 2))

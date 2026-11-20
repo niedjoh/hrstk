@@ -8,4 +8,4 @@
 (fun g (-> o o o))
 (fun h (-> (-> o o) o))
 (rule (i X) (g X X))
-(rule (g (h (lambda ((x o)) (F x))) X) (F X))
+(rule (g (h F) X) (F X))

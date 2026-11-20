@@ -7,4 +7,4 @@
 (fun f (-> o o))
 (fun g (-> (-> o o) o))
 (fun h (-> o o))
-(rule (f (g (lambda ((x o)) (F x)))) (F (g (lambda ((x o)) (h (F x))))))
+(rule (f (g F)) (F (g (lambda ((x o)) (h (F x))))))

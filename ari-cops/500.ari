@@ -5,4 +5,4 @@
 (fun abs (-> (-> term term) term))
 (fun app (-> term term term))
 (rule (app (abs (lambda ((x term)) G)) S) G)
-(rule (app (abs (lambda ((x term)) (F x x))) S) (app (abs (lambda ((x term)) (F S x))) S))
+(rule (app (abs (lambda ((x term)) (F x x))) S) (app (abs (F S)) S))

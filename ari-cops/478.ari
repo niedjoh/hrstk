@@ -9,6 +9,6 @@
 (fun i (-> o o))
 (fun f (-> (-> o o) o))
 (fun a o)
-(rule (f (lambda ((x o)) (F x))) (F a))
-(rule (g a) (f (lambda ((x o)) (i x))))
+(rule (f F) (F a))
+(rule (g a) (f i))
 (rule (i X) (h (g X)))

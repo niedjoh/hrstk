@@ -8,7 +8,7 @@
 (fun s (-> nat nat))
 (fun * (-> nat nat nat))
 (fun app (-> (-> nat nat) nat nat))
-(rule (app (lambda ((x nat)) (M x)) N) (M N))
+(rule (app M N) (M N))
 (rule (+ x 0) x)
 (rule (+ x (s y)) (s (+ x y)))
 (rule (+ 0 y) y)

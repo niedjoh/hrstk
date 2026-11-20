@@ -6,5 +6,5 @@
 (fun 0 nat)
 (fun s (-> nat nat))
 (fun rec (-> (-> nat A A) A nat A))
-(rule (rec (lambda ((x nat) (y A)) (F x y)) a 0) a)
-(rule (rec (lambda ((x nat) (y A)) (F x y)) a (s n)) (F n (rec (lambda ((x nat) (y A)) (F x y)) a n)))
+(rule (rec F a 0) a)
+(rule (rec F a (s n)) (F n (rec F a n)))

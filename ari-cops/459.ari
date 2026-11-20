@@ -13,5 +13,5 @@
 (rule (neg (neg z)) z)
 (rule (neg (and z z')) (or (neg z) (neg z')))
 (rule (neg (or z z')) (and (neg z) (neg z')))
-(rule (neg (forall (lambda ((x term)) (y x)))) (exists (lambda ((x term)) (neg (y x)))))
-(rule (neg (exists (lambda ((x term)) (y x)))) (forall (lambda ((x term)) (neg (y x)))))
+(rule (neg (forall y)) (exists (lambda ((x term)) (neg (y x)))))
+(rule (neg (exists y)) (forall (lambda ((x term)) (neg (y x)))))

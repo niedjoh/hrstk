@@ -8,6 +8,6 @@
 (fun g (-> o o o))
 (fun a o)
 (fun b o)
-(rule (f X (lambda ((x o)) (F x))) (F X))
-(rule (g a a) (f a (lambda ((x o)) (g b x))))
+(rule (f X F) (F X))
+(rule (g a a) (f a (g b)))
 (rule b a)
