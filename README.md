@@ -67,9 +67,6 @@ If no concrete method is given, the tool tries NCPO before polynomial interpreta
 
 ## hrstk-conf
 
-Confluence tool for DPRSs.
-The following methods are implemented:
-
 * orthogonalityof DPRSs (`-c ortho`)
 * [development closedness](https://doi.org/10.1016/S0304-3975(96)00173-9) of PRSs (`-c dc`)
 * local confluence by joinability of critical pairs) for DPRSs (`-c lc`)
@@ -94,6 +91,11 @@ down to sort.
 
 The tool generates a random sequence of terms. Use `-n` to set the number
 and `-d` to restrict to deterministic higher-order patterns.
+
+## hrstk-wb-transform
+
+Transforms a single `.ari` file, or all `.ari` files in a directory (recursively),
+into well-behaved STMRSs.
 
 ## Testing
 
