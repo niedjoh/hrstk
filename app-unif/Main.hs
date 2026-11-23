@@ -58,12 +58,12 @@ work = do
       putStrLn "ERROR"
       putStr e
       exitFailure
-    Right (n,ss,cs,ee,pd,axs,conjs) -> do
+    Right (n,_,_,_,_,axs,_) -> do
       unification n (verbose args) axs
       return (verbose args)
 
 unification :: Int -> Bool -> ES -> IO ()
-unification n v (e:es) = case evalState (runMaybeT $ Unif.unif (lhs e) (rhs e)) n of
+unification n v (e:_) = case evalState (runMaybeT $ Unif.unif (lhs e) (rhs e)) n of
   Nothing -> do
     putStrLn "MAYBE"
     when v . printES "input DHP unification problem:" $ [e]

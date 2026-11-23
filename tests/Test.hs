@@ -14,6 +14,7 @@ import CriticalPairsSpec (criticalPairsSpecs)
 import PolySpec (polySpecs)
 import NCPOSpec (ncpoSpecs)
 import StarCPOSpec (scpoSpecs)
+import WellBehavedSpec (wbSpecs)
 import Properties (props)
 
 main :: IO ()
@@ -29,6 +30,7 @@ main = do
                                      , polySpecs
                                      , ncpoSpecs
                                      , scpoSpecs
+                                     , wbSpecs
                                      ]
   defaultMain $ testGroup "All Tests" [ testGroup "Specs" specs
                                       , testGroup "Properties" props]

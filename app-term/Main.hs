@@ -24,11 +24,10 @@ import Options.Applicative
       helper,
       Parser,
       ParserInfo )
-import Prettyprinter (pretty)
 import Prettyprinter.Render.Text (putDoc)
 import System.Exit (exitFailure)
 
-import Utils.SMT (SMTSolver,smtSolverFromString,z3,cvc5,yices)
+import Utils.SMT (SMTSolver,smtSolverFromString,cvc5)
 import Utils.InputProcessing (InputType(..),processInput)
 import Utils.App (InputFormat(..),inputFormatFromString,chooseParser,printES,wrapWithTimeMeasurement)
 import Typ.Type (Sort)
@@ -62,7 +61,7 @@ work = do
       putStrLn "ERROR"
       putStr e
       exitFailure
-    Right (n,ss,cs,ee,pd,axs,conjs) -> do
+    Right (_,ss,cs,_,_,axs,_) -> do
       termination (method args) (smtSolver args) (verbose args) (debug args) ss cs axs
       return (verbose args)
 

@@ -3,12 +3,10 @@
 module Main where
 
 import Control.Monad (replicateM)
-import Data.Char (toLower)
 import Hedgehog (Gen, Size(..))
 import qualified Hedgehog.Gen as G
 import Options.Applicative
     ( (<**>),
-      argument,
       eitherReader,
       fullDesc,
       header,
@@ -20,7 +18,6 @@ import Options.Applicative
       progDesc,
       short,
       showDefault,
-      str,
       switch,
       value,
       execParser,
@@ -59,10 +56,10 @@ printSamples gen i = do
   putStrLn ""
 
 printTermSamples :: Size -> Int -> IO ()
-printTermSamples size = printSamples (\as availM a -> G.resize size $ genArbitraryTerm as availM a)
+printTermSamples sz = printSamples (\as availM a -> G.resize sz $ genArbitraryTerm as availM a)
 
 printDHPSamples :: Size -> Int -> IO ()
-printDHPSamples size = printSamples (\as availM a -> G.resize size $ genDHP as availM a)
+printDHPSamples sz = printSamples (\as availM a -> G.resize sz $ genDHP as availM a)
 
 opts :: ParserInfo Args
 opts = info (argsParser <**> helper)

@@ -30,7 +30,6 @@ import System.Exit (exitFailure)
 import Utils.InputProcessing (InputType(..),processInput)
 import Utils.App (InputFormat(..),inputFormatFromString,chooseParser,printES,printNES,wrapWithTimeMeasurement)
 import Equation.Type (ES)
-import Equation.Ops (rule, epatRule, dhpRule, patternRule, leftLinear, secondOrderEq)
 import qualified Equation.Rewriting as RW
 
 data Args = Args
@@ -57,7 +56,7 @@ work = do
       putStrLn "ERROR"
       putStr e
       exitFailure
-    Right (n,ss,cs,ee,pd,axs,conjs) -> do
+    Right (_,_,_,_,_,axs,conjs) -> do
       conjectureJoinability (verbose args) axs conjs
       return (verbose args)
           

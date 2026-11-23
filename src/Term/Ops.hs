@@ -38,6 +38,10 @@ isDBGeq :: Int -> Head -> Bool
 isDBGeq i (DB j) = j >= i
 isDBGeq _ _ = False
 
+isBasic :: Term -> Bool
+isBasic (Term {nlams = 0, typ = Typ [] _}) = True
+isBasic _ = False
+
 -- |Computes the set of free variables of a term.
 freeVars :: Term -> Set Var
 freeVars s@(Term {hd = FV v}) = S.unions (S.singleton v : map freeVars (sp s))
@@ -87,9 +91,9 @@ hdToTerm a@(Typ bs _) h =
 addLams :: [Typ] -> Term -> Term
 addLams as s = s{nlams = length as + nlams s, typ = liftTyp as (typ s)}
 
--- |Determines whether the term contains DB's which are smaller than a given number
-containsDBrel :: (Int -> Int -> Bool) -> Term -> Bool
-containsDBrel rel = go 0 where
+-- |Determines whether the term contains DB's which are in given relation the supplied DB
+containsDBrel :: (Int -> Int -> Bool) -> Int -> Term -> Bool
+containsDBrel rel k = go k where
   go i s = let
     i' = i + nlams s
     recRes = any (go i') (sp s)
@@ -99,7 +103,7 @@ containsDBrel rel = go 0 where
 
 -- |Determines whether the term contains a dangling De Bruijn index.
 danglingDB :: Term -> Bool
-danglingDB = containsDBrel (\i' j -> i' <= j)
+danglingDB = containsDBrel (\i' j -> i' <= j) 0
 
 -- |Shifts all De Bruijn indices in a given term by the given integer.
 shiftDB :: Int -> Term -> Term
@@ -117,7 +121,7 @@ expandedTerm :: Term -> Bool
 expandedTerm s = occCond && dbTailCond where
   n = nlams s
   (ss,ts) = splitAtEnd n (sp s)
-  occCond = not $ containsDBrel (\i' j -> i' <= j && j < n+i') s{nlams = 0, sp = ss}
+  occCond = not $ containsDBrel (\i' j -> i' <= j && j < n+i') 0 s{nlams = 0, sp = ss}
   dbTailCond = and [t == hdToTerm (typ t) (DB i) | (t,i) <- zip (reverse ts) [0..]]
 
 -- |checks whether a term t is an expanded subterm of s

@@ -60,7 +60,7 @@ work = do
       putStrLn "ERROR"
       putStr e
       exitFailure
-    Right (n,ss,cs,ee,pd,axs,conjs) -> do
+    Right (_,_,_,ee,pd,axs,_) -> do
       esInfo (verbose args) ee pd axs
       return (verbose args)
 
