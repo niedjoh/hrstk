@@ -12,4 +12,4 @@
 (rule (dom 0 (s Y) (s Z)) (s (dom 0 Y Z)))
 (rule (dom X Y 0) X)
 (rule (dom 0 0 Z) 0)
-(rule (eval (fun (lambda ((x nat)) (F x)) X Y) Z) (F (dom X Y Z)))
+(rule (eval (fun F X Y) Z) (F (dom X Y Z)))

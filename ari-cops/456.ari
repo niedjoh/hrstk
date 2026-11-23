@@ -20,5 +20,5 @@
 (rule (app iszero (s m)) ff)
 (rule (app (app (app iff tt) x) y) x)
 (rule (app (app (app iff ff) x) y) y)
-(rule (app (abs (lambda ((x term)) (z x))) y) (z y))
+(rule (app (abs z) y) (z y))
 (rule (app Y x) (app x (app Y x)))

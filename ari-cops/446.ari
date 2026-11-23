@@ -7,5 +7,5 @@
 (fun a o)
 (fun g (-> o o))
 (fun h (-> o o o))
-(rule (f (lambda ((x o)) (z x))) (z (z a)))
+(rule (f z) (z (z a)))
 (rule (g x) (h x x))

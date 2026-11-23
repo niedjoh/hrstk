@@ -6,5 +6,5 @@
 (sort o)
 (fun compo (-> (-> o o) (-> o o) o o))
 (fun apply (-> (-> o o) o o))
-(rule (compo (lambda ((x o)) (F x)) (lambda ((y o)) (G y)) Z) (F (G Z)))
-(rule (apply (lambda ((x o)) (F x)) X) (F X))
+(rule (compo F (lambda ((y o)) (G y)) Z) (F (G Z)))
+(rule (apply F X) (F X))

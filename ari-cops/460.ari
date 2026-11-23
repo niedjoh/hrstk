@@ -6,4 +6,4 @@
 (sort o)
 (fun f (-> o (-> o o) o))
 (fun a o)
-(rule (f a (lambda ((x o)) (Z x))) (f (Z a) (lambda ((x o)) (Z x))))
+(rule (f a Z) (f (Z a) Z))

@@ -8,5 +8,5 @@
 (fun g (-> o o))
 (fun h o)
 (fun i (-> o o))
-(rule (f (lambda ((x o)) (X x))) (g (X h)))
+(rule (f X) (g (X h)))
 (rule (g Y) (i Y))

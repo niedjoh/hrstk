@@ -7,5 +7,5 @@
 (fun apply (-> (-> o o) o o))
 (fun a o)
 (fun b o)
-(rule (apply (lambda ((x o)) (F x)) X) (F X))
+(rule (apply F X) (F X))
 (rule a b)

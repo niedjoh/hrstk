@@ -11,4 +11,4 @@
 (fun mu (-> (-> o o) o))
 (rule (f x x) a)
 (rule (f x (s x)) b)
-(rule (mu (lambda ((x o)) (Z x))) (Z (mu (lambda ((x o)) (Z x)))))
+(rule (mu Z) (Z (mu Z)))

@@ -9,7 +9,7 @@
 (fun union (-> G G G))
 (fun lam (-> (-> G G) Ar<G_G>))
 (fun app (-> Ar<G_G> G G))
-(rule (app (lam (lambda ((x G)) (M x))) N) (M N))
+(rule (app (lam M) N) (M N))
 (rule (lam (lambda ((x G)) (app L x))) L)
 (rule (union x 0) x)
 (rule (union 0 y) y)

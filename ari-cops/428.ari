@@ -6,5 +6,5 @@
 (fun s (-> nat nat))
 (fun sum (-> nat (-> nat nat) nat))
 (fun a (-> nat nat nat))
-(rule (sum 0 (lambda ((i nat)) (F i))) (F 0))
-(rule (sum (s n) (lambda ((i nat)) (F i))) (F (s n)))
+(rule (sum 0 F) (F 0))
+(rule (sum (s n) F) (F (s n)))

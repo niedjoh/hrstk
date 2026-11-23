@@ -10,5 +10,5 @@
 (rule (sub (lambda ((y term)) X0) Y) X0)
 (rule (sub (lambda ((y term)) y) Y) Y)
 (rule (sub (lambda ((y term)) (abs (lambda ((x term)) (X2 x y)))) Y) (abs (lambda ((x term)) (sub (lambda ((y term)) (X2 x y)) Y))))
-(rule (sub (lambda ((y term)) (app (X y) (X' y))) Y) (app (sub (lambda ((y term)) (X y)) Y) (sub (lambda ((y term)) (X' y)) Y)))
-(rule (sub (lambda ((x term)) (sub (lambda ((y term)) (X2 y x)) (X x))) X0) (sub (lambda ((y term)) (sub (lambda ((x term)) (X2 y x)) X0)) (sub (lambda ((x term)) (X x)) X0)))
+(rule (sub (lambda ((y term)) (app (X y) (X' y))) Y) (app (sub X Y) (sub X' Y)))
+(rule (sub (lambda ((x term)) (sub (lambda ((y term)) (X2 y x)) (X x))) X0) (sub (lambda ((y term)) (sub (lambda ((x term)) (X2 y x)) X0)) (sub X X0)))

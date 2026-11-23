@@ -9,5 +9,5 @@
 (fun h (-> o o o))
 (fun a o)
 (fun b o)
-(rule (f (lambda ((x o)) x) (lambda ((x o) (y o)) (Z x y))) (g (Z a (f (lambda ((x o)) (Z x a)) (lambda ((x o) (y o)) (Z x y))))))
+(rule (f (lambda ((x o)) x) Z) (g (Z a (f (lambda ((x o)) (Z x a)) Z))))
 (rule (h x y) x)

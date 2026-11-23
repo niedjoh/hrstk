@@ -15,5 +15,5 @@
 (rule (avg 0 0) 0)
 (rule (avg 0 (s 0)) 0)
 (rule (avg 0 (s (s 0))) (s 0))
-(rule (apply (fun (lambda ((x nat)) (F x))) y) (F (check y)))
+(rule (apply (fun F) y) (F (check y)))
 (rule (check 0) 0)

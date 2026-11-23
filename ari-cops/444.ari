@@ -4,4 +4,4 @@
 (format HRS)
 (sort o)
 (fun mu (-> (-> o o) o))
-(rule (mu (lambda ((x o)) (z x))) (z (mu (lambda ((x o)) (z x)))))
+(rule (mu z) (z (mu z)))

@@ -4,4 +4,4 @@
 (format HRS)
 (sort A)
 (fun f (-> (-> (-> A A) A) A))
-(rule (f (lambda ((x (-> A A))) (z (lambda ((y A)) (x y))))) (z (lambda ((y A)) y)))
+(rule (f z) (z (lambda ((y A)) y)))

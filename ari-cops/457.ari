@@ -8,7 +8,7 @@
 (fun abs (-> (-> o o) o))
 (fun or (-> o o o))
 (fun tt o)
-(rule (app (abs (lambda ((x o)) (y x))) z) (y z))
+(rule (app (abs y) z) (y z))
 (rule (abs (lambda ((x o)) (app z x))) z)
 (rule (or tt x) tt)
 (rule (or x tt) tt)

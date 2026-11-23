@@ -11,5 +11,5 @@
 (fun h (-> (-> o o) o))
 (rule (f x b) (g x x))
 (rule (g x a) (f x x))
-(rule (h (lambda ((x o)) (F x))) (F a))
-(rule (h (lambda ((x o)) (F x))) (F b))
+(rule (h F) (F a))
+(rule (h F) (F b))

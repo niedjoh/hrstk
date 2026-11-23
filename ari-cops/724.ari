@@ -6,4 +6,4 @@
 (fun f' (-> (-> o o) o))
 (fun g (-> o o))
 (fun app (-> (-> o o) o o))
-(rule (f' (lambda ((y o)) (g y))) (f' (lambda ((y o)) (app (lambda ((z o)) (g z)) y))))
+(rule (f' g) (f' (app (lambda ((z o)) (g z)))))

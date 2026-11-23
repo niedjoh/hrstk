@@ -7,7 +7,7 @@
 (fun p1 (-> T T))
 (fun p2 (-> T T))
 (fun pair (-> T T T))
-(rule (app (abs (lambda ((x T)) (Z x))) Y) (Z Y))
+(rule (app (abs Z) Y) (Z Y))
 (rule (p1 (pair x1 x2)) x1)
 (rule (p2 (pair x1 x2)) x2)
 (rule (pair (p1 x) (p2 x)) x)

@@ -4,4 +4,4 @@
 (format HRS)
 (sort term)
 (fun sub (-> (-> term term) term term))
-(rule (sub (lambda ((x term)) (sub (lambda ((y term)) (X2 y x)) (X x))) X0) (sub (lambda ((y term)) (sub (lambda ((x term)) (X2 y x)) X0)) (sub (lambda ((x term)) (X x)) X0)))
+(rule (sub (lambda ((x term)) (sub (lambda ((y term)) (X2 y x)) (X x))) X0) (sub (lambda ((y term)) (sub (lambda ((x term)) (X2 y x)) X0)) (sub X X0)))

@@ -10,5 +10,5 @@
 (rule (append nil l) l)
 (rule (append (cons h t) l) (cons h (append t l)))
 (rule (append (append k l) m) (append k (append l m)))
-(rule (map (lambda ((x nat)) (F x)) nil) nil)
-(rule (map (lambda ((x nat)) (F x)) (cons h t)) (cons (F h) (map (lambda ((x nat)) (F x)) t)))
+(rule (map F nil) nil)
+(rule (map F (cons h t)) (cons (F h) (map F t)))

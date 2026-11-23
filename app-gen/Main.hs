@@ -68,7 +68,7 @@ opts :: ParserInfo Args
 opts = info (argsParser <**> helper)
   ( fullDesc
   <> progDesc "generates random terms"
-  <> header "hrstk-gen - higher-order term generator" )
+  <> header "hrstk - term generator" )
 
 argsParser :: Parser Args
 argsParser = Args

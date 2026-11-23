@@ -61,7 +61,7 @@ spec_extend =
                              , mkTerm DB.one Typ.a []
                              , mkTerm DB.one Typ.aa [ mkTerm DB.zero Typ.a [] ]
                              ]
-    it "computes an example correclty" $
+    it "computes an example correctly" $
       extend s1 b1 `shouldBe` t1
 
 scpoSpecs :: Spec
