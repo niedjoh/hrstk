@@ -14,6 +14,7 @@ import CriticalPairsSpec (criticalPairsSpecs)
 import PolySpec (polySpecs)
 import NCPOSpec (ncpoSpecs)
 import StarCPOSpec (scpoSpecs)
+import DuplicateCheckerSpec (duplicateCheckerSpecs)
 import WellBehavedSpec (wbSpecs)
 import Properties (props)
 
@@ -30,6 +31,7 @@ main = do
                                      , polySpecs
                                      , ncpoSpecs
                                      , scpoSpecs
+                                     , duplicateCheckerSpecs
                                      , wbSpecs
                                      ]
   defaultMain $ testGroup "All Tests" [ testGroup "Specs" specs

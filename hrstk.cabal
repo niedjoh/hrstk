@@ -100,6 +100,21 @@ executable hrstk-gen
   default-language: Haskell2010
   ghc-options: -Wall
 
+executable hrstk-ari-dc
+  main-is:          Main.hs
+  build-depends:
+       base >= 4.18
+     , hrstk-lib
+     , optparse-applicative
+     , prettyprinter
+     , text
+     , directory
+     , filepath
+     , containers
+  hs-source-dirs:   app-ari-dc
+  default-language: Haskell2010
+  ghc-options: -Wall
+  
 executable hrstk-wb-transform
   main-is:          Main.hs
   build-depends:
@@ -164,6 +179,7 @@ library hrstk-lib
     , ARI.Parse
     , ARI.Pretty
     , Gen
+    , DuplicateChecker
     , WellBehaved
   build-depends:
       base >= 4.19
@@ -203,6 +219,7 @@ test-suite hrstk-test
     , PolySpec
     , NCPOSpec
     , StarCPOSpec
+    , DuplicateCheckerSpec
     , WellBehavedSpec
     , Properties
     , Predefined.Sort

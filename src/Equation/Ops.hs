@@ -1,11 +1,14 @@
 -- |collection of useful functions for substitutions
 module Equation.Ops where
 
+import Data.List (nub)
 import qualified Data.Set as S
+import qualified Data.Map.Strict as M
 
+import Utils.Type (Var(..))
 import Typ.Ops (sort)
 import Term.Type (Term(..))
-import Term.Ops (freeVars,isHeadedByFreeVar,isEPAT,isDHP,isPattern,linear,secondOrder)
+import Term.Ops (freeVars,isHeadedByFreeVar,isEPAT,isDHP,isPattern,linear,secondOrder,fvsOrdered,renameFVs)
 import Subst.Ops (apply)
 import Subst.Match (match)
 import Equation.Type (Equation(..))
@@ -60,3 +63,10 @@ dhpRuleVariants e1 e2
   | Just subst1 <- match (lhs e1) (lhs e2), Just subst2 <-match (lhs e2) (lhs e1) =
       apply subst1 (rhs e1) == (rhs e2) && apply subst2 (rhs e2) == (rhs e1)
   | otherwise = False
+
+-- | Rename the free variables of a rule to Fresh 0, Fresh 1, ...
+canonicalFVrename :: Equation -> Equation
+canonicalFVrename e = e{lhs = renameFVs m (lhs e), rhs = renameFVs m (rhs e)}
+  where
+    vs = nub (fvsOrdered (lhs e) ++ fvsOrdered (rhs e))
+    m  = M.fromList $ zip vs (map Fresh [0 ..])

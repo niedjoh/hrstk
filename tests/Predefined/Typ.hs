@@ -21,6 +21,9 @@ aaa = Typ [a,a] Sort.a
 aaToa :: Typ
 aaToa = Typ [aa] Sort.a
 
+aCaaToa :: Typ
+aCaaToa = Typ [a,aa] Sort.a
+
 bb :: Typ
 bb = Typ [b] Sort.b
 
@@ -35,3 +38,21 @@ ba = Typ [b] Sort.a
 
 abb :: Typ
 abb = Typ [a,b] Sort.b
+
+bbTob :: Typ
+bbTob = Typ [bb] Sort.b
+
+bCbbTob :: Typ
+bCbbTob = Typ [b,bb] Sort.b
+
+u :: Typ
+u = Typ [] Sort.u
+
+uu :: Typ
+uu = Typ [u] Sort.u
+
+uuTou :: Typ
+uuTou = Typ [u,uu] Sort.u
+
+uCuuTou :: Typ
+uCuuTou = Typ [u,uu] Sort.u

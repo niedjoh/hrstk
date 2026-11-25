@@ -9,3 +9,6 @@ a = Id "a"
 
 b :: Id
 b = Id "b"
+
+u :: Id
+u = Id "_"

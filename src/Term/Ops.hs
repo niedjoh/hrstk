@@ -77,6 +77,23 @@ secondOrder s@(Term {hd = FV _}) = all ((<= 1) . order . typ) (sp s) && all seco
 secondOrder s@(Term {hd = DB _}) = null (sp s)
 secondOrder s = all ((<= 2) . order . typ) (sp s) && all secondOrder (sp s)
 
+-- | Free variables in order of first occurrence
+fvsOrdered :: Term -> [Var]
+fvsOrdered s
+  | FV v <- hd  s = v : recres
+  | otherwise = recres
+  where
+    recres = concatMap fvsOrdered (sp s)
+
+-- | Rename free variables in term
+renameFVs :: Map Var Var -> Term -> Term
+renameFVs m s = s{ hd = h', sp = map (renameFVs m) (sp s)} where
+  h' = case hd s of
+    FV v -> case m M.!? v of
+      Just v' -> FV v'
+      Nothing -> error "renaming not defined on var"
+    h -> h
+
 -- |Given a type and a head, this function returns the corresponding
 -- term in lnf.
 hdToTerm :: Typ -> Head -> Term

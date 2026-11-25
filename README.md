@@ -27,8 +27,8 @@ symlinks in `~/.cabal/bin/`:
 * `hrstk-conj`: conjecture joinability for DPRSs
 * `hrstk-unif`: unification of [deterministic higher-order patterns](https://doi.org/10.1007/978-3-540-25938-1_12)
 * `hrstk-gen`: generation of terms/determinitic higher-order patterns
-* `hrstk-ari-dc`: duplicate checker for ARI files
-* `hrstk-wb-transform`: transform ARI files into well-behaved STMRSs
+* `hrstk-ari-dc`: duplicate checker for higher-order ARI files
+* `hrstk-wb-transform`: transform higher-order ARI files into well-behaved STMRSs
 
 You can use `[tool] --help` to get more information for each tool.
 Use the option `-v` to get verbose output.
