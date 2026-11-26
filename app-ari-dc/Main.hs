@@ -4,40 +4,47 @@
 module Main where
 
 import Control.Applicative (some)
+import Data.Char (toLower)
 import Data.Text (Text)
 import qualified Data.Text.IO as TIO
 import Options.Applicative
     ( (<**>),
       argument,
+      eitherReader,
       fullDesc,
       header,
       help,
       info,
       long,
       metavar,
+      option,
       progDesc,
       short,
+      showDefault,
       str,
       switch,
+      value,
       execParser,
       helper,
       Parser,
       ParserInfo )
+import Prettyprinter (Doc,pretty,line,emptyDoc,(<+>))
+import Prettyprinter.Render.Text (putDoc)
 import System.Exit (exitFailure)
 
+import Utils.SMT (SMTSolver,smtSolverFromString,cvc5)
 import Utils.Parse (parseProblem,scARI)
 import Utils.InputProcessing (InputType(..),processInput)
-import Utils.App (printES,wrapWithTimeMeasurement)
-import Typ.Type (Sort)
-import Term.Type (FunTypMap)
-import Equation.Type (ES)
+import Utils.App (wrapWithTimeMeasurement)
 import Equation.Ops (canonicalFVrename)
-import DuplicateChecker (TypSkeletonFunsMap,toTypSkeletonFunsMap)
+import DuplicateChecker (DCProblem(..),toTypSkeletonFunsMap,duplicates)
 import qualified ARI
 
 data Args = Args
   { inputFiles :: [String]
+  , smtSolver :: SMTSolver
   , verbose :: Bool
+  , debug :: Bool
   }
 
 main :: IO ()
@@ -53,16 +60,27 @@ work = do
       putStr e
       exitFailure
     Right ps -> do
-      -- mapM_ (\(f,_,_,es) -> printES f es >> putStrLn "") ps
+      ds <- duplicates (smtSolver args) (debug args) ps
+      putDoc . duplicatesDoc $ ds
+      -- verbose output??
       return (verbose args)
 
-processInputs :: [String] -> [Text] -> Either String [(String,[Sort],FunTypMap,TypSkeletonFunsMap,ES)]
+processInputs :: [String] -> [Text] -> Either String [DCProblem]
 processInputs fs is =
     traverse
-    (\(f,i) ->  (\(_,ss,fTyM,_,_,es,_) -> (f,ss,fTyM,toTypSkeletonFunsMap fTyM,map canonicalFVrename es)) <$>
+    (\(f,i) ->  (\(_,ss,fTyM,_,_,es,_) -> DCProblem { file = f
+                                                    , sorts = ss
+                                                    , funTypMap = fTyM
+                                                    , typSkeletonFunsMap = toTypSkeletonFunsMap fTyM
+                                                    , equations = map canonicalFVrename es
+                                                    }) <$>
      processInput f i HES False False False (parseProblem scARI (ARI.parser))
     )
     (zip fs is)
+
+duplicatesDoc :: [(DCProblem,DCProblem)] -> Doc ann
+duplicatesDoc [] = emptyDoc
+duplicatesDoc ((x,y):ps) = pretty (file x) <+> "==" <+> pretty (file y) <> line <> duplicatesDoc ps
 
 opts :: ParserInfo Args
 opts = info (argsParser <**> helper)
@@ -76,7 +94,18 @@ argsParser = Args
   <$> some (argument str
       ( metavar "FILES"
      <> help "input files" ))
+  <*> option (eitherReader $ smtSolverFromString . map toLower)
+      ( long "smt-solver"
+     <> short 's'
+     <> showDefault
+     <> value cvc5
+     <> metavar "cvc5 | yices | z3"
+     <> help "SMT solver" )
   <*> switch
       ( long "verbose"
      <> short 'v'
      <> help "more output information" )
+  <*> switch
+      ( long "debug"
+     <> short 'd'
+     <> help "output SMT debug information" )

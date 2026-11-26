@@ -5,7 +5,7 @@ import Data.Set (Set)
 import qualified Data.Set as S
 
 import Utils.Type (Id(..))
-import Typ.Type (Typ(..))
+import Typ.Type (Typ(..),Sort)
 
 -- |Checks whether a type is a sort.
 sort :: Typ -> Bool
@@ -31,6 +31,10 @@ liftTyp as (Typ bs b) = Typ (as ++ bs) b
 -- |Arity of a given type.
 arity :: Typ -> Int
 arity (Typ as _) = length as
+
+-- |Flatten type into list of sorts.
+flatten :: Typ -> [Sort]
+flatten (Typ as a) = concatMap flatten as ++ [a]
 
 -- |Determine the order of a given type.
 order :: Typ -> Int

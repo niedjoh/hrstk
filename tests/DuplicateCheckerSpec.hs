@@ -24,5 +24,5 @@ spec_toTypSkeletonFunsMap =
       toTypSkeletonFunsMap fTyM `shouldBe` tsfM
 
 duplicateCheckerSpecs :: Spec
-duplicateCheckerSpecs = describe "toTypeSkeletonFunsMap" $ do
+duplicateCheckerSpecs = describe "DuplicateChecker" $ do
   spec_toTypSkeletonFunsMap
