@@ -97,10 +97,13 @@ termConstraint s t
   | nlams s == nlams t, length (sp s) == length (sp t) = case (hd s,hd t) of
       (F f,F g) -> do
         (sM,tM) <- ask
-        ((sM M.! f) === (tM M.! g)) <&& (and <$> traverse (uncurry termConstraint) (zip (sp s) (sp t)))
-      _ -> return . bool $ hd s == hd t
+        ((sM M.! f) === (tM M.! g)) <&& recRes
+      _ -> if hd s == hd t
+        then recRes
+        else return false
   | otherwise = return false
-
+  where
+    recRes = and <$> traverse (uncurry termConstraint) (zip (sp s) (sp t))
 
 
 

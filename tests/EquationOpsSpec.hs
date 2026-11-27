@@ -2,7 +2,7 @@
 
 module EquationOpsSpec (equationOpsSpecs) where
 
-import Test.Hspec (Spec, describe, it, shouldSatisfy, shouldNotSatisfy)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy, shouldNotSatisfy)
 
 import qualified Predefined.Typ as Typ 
 import qualified Predefined.DB as DB
@@ -116,8 +116,58 @@ spec_dhpRuleVariants =
     it "rejects inconsistency wrt. argument order" $
       (r4,r7) `shouldNotSatisfy` (uncurry dhpRuleVariants)
                                
+spec_canonicalFVrename :: Spec
+spec_canonicalFVrename =
+  describe "canonicalFVrename" $ do
+    let l1 =  mkTerm Fun.f Typ.b [ mkTerm Var.x Typ.aaa []
+                                 , mkTerm Var.y Typ.aaa []
+                                 , mkTerm Fun.g Typ.b [ mkTerm Var.z Typ.a []
+                                                      , mkTerm Var.xp Typ.b []
+                                                      ]
+                                 , mkTerm Var.yp Typ.a []
+                                 ]
+        r1 = mkTerm Fun.g Typ.b [ mkTerm Var.x Typ.a [ mkTerm Var.z Typ.a []
+                                                     , mkTerm Var.yp Typ.a []
+                                                     ]
+                                , mkTerm Fun.f Typ.b [ mkTerm Var.x Typ.aaa []
+                                                     , mkTerm Var.y Typ.aaa []
+                                                     , mkTerm Var.xp Typ.b []
+                                                     , mkTerm Var.y Typ.a [ mkTerm Var.z Typ.a []
+                                                                          , mkTerm Var.yp Typ.a []
+                                                                          ]
+                                                     ]
+                                ]        
+        l2 =  mkTerm Fun.f Typ.b [ mkTerm Var.fresh0 Typ.aaa []
+                                 , mkTerm Var.fresh1 Typ.aaa []
+                                 , mkTerm Fun.g Typ.b [ mkTerm Var.fresh2 Typ.a []
+                                                      , mkTerm Var.fresh3 Typ.b []
+                                                      ]
+                                 , mkTerm Var.fresh4 Typ.a []
+                                 ]
+        r2 = mkTerm Fun.g Typ.b [ mkTerm Var.fresh0 Typ.a [ mkTerm Var.fresh2 Typ.a []
+                                                          , mkTerm Var.fresh4 Typ.a []
+                                                          ]
+                                , mkTerm Fun.f Typ.b [ mkTerm Var.fresh0 Typ.aaa []
+                                                     , mkTerm Var.fresh1 Typ.aaa []
+                                                     , mkTerm Var.fresh3 Typ.b []
+                                                     , mkTerm Var.fresh1 Typ.a [ mkTerm Var.fresh2 Typ.a []
+                                                                               , mkTerm Var.fresh4 Typ.a []
+                                                                               ]
+                                                     ]
+                                ]        
+        rule1 = Equation { lhs = l1
+                         , rhs = r1
+                         , isRule = True
+                         }        
+        rule2 = Equation { lhs = l2
+                         , rhs = r2
+                         , isRule = True
+                         }
+    it "computes example correctly" $
+      canonicalFVrename rule1 `shouldBe` rule2
 
 equationOpsSpecs :: Spec
 equationOpsSpecs = describe "Equation.Ops" $ do
   spec_rule
   spec_dhpRuleVariants
+  spec_canonicalFVrename

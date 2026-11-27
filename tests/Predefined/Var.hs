@@ -39,3 +39,5 @@ fresh2 = fresh 2
 fresh3 :: Head
 fresh3 = fresh 3
 
+fresh4 :: Head
+fresh4 = fresh 4
